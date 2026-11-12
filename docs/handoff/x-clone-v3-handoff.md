@@ -5,7 +5,7 @@ missing story goes back to product as a change request. Engineering only changes
 (status and comments, through `board-server.mjs`).
 
 - **Source:** `zartis-digital/x-clone-product`, `examples/` (x-clone-v3, the synced hand-off)
-- **Source commit:** `1d1f913` (PR "Shared six-state board; x-clone-v3 as the synced hand-off example")
+- **Source commit:** `1d1f913`, merged to `main` as `f79f6bb` (PR #1, "Shared six-state board; x-clone-v3 as the synced hand-off example"); `examples/` is identical in both
 - **Copied:** 2026-11-12
 - **Contract:** hand-off contract v0.2 (six states: New, In Progress, In Review, In QA, In Acceptance, Done)
 - **Path change:** `examples/…` became `docs/…` in links and board sources; nothing else changed
