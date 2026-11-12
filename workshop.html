@@ -1104,7 +1104,7 @@
       }
 
       /* ============================================================
-       Platform Toggle (Terminal / Desktop app), as in the product track
+       Platform Toggle (Terminal / Desktop app)
        ============================================================ */
       html[data-platform="terminal"] .only-desktop,
       html[data-platform="desktop"] .only-terminal {
@@ -1160,16 +1160,16 @@
       <section class="getting-started">
         <h2>Getting Started</h2>
 
-        <p>The product track has already done its work: an idea, a PRD, four epics and ten user
-          stories for the X Clone, synced to a board. You pick up where it finished. You build a
-          small team of Claude Code skills that take a story from <strong>New</strong> to
+        <p>The backlog is ready: ten user stories for the X Clone, grouped in four epics, with the
+          PRD behind them, are waiting on the team's board. Like a developer joining the team, you
+          take it from there. You build a small team of Claude Code skills that take a story from <strong>New</strong> to
           <strong>In Acceptance</strong> on their own, checking their work with end-to-end tests
           and posting a video for every acceptance criterion. The only human step is yours:
           accepting the work on the board.</p>
 
         <table class="time-table">
           <thead><tr><th>Part</th><th>What you do</th><th>Time</th></tr></thead>
-          <tbody><tr><td>Getting started</td><td>Install, start the app and the board, save your sign-in</td><td>~30 min</td></tr><tr><td>Part 1: Meet the hand-off</td><td>The product track's stories on the board</td><td>~15 min</td></tr><tr><td>Part 2: Claude Code essentials</td><td>Context and rules, plan mode, guard hooks</td><td>~35 min</td></tr><tr><td>Part 3: Walk the pipeline</td><td>Build each stage skill and use it on its own</td><td>~90 min</td></tr><tr><td>Part 4: Improve &amp; orchestrate</td><td>The factory loop and <code>/implement</code></td><td>~65 min</td></tr><tr><td>Part 5: The small factory</td><td>A whole epic, unattended, to In Acceptance</td><td>~55 min</td></tr><tr><td>Part 6: Take it home</td><td>What you built, and where it goes next</td><td>~10 min</td></tr><tr><td><strong>Total</strong></td><td>plus breaks; extras at the end if you're fast</td><td><strong>~5 h 00</strong></td></tr></tbody>
+          <tbody><tr><td>Getting started</td><td>Install, start the app and the board, save your sign-in</td><td>~30 min</td></tr><tr><td>Part 1: Meet the backlog</td><td>The stories on the board, and how they move</td><td>~15 min</td></tr><tr><td>Part 2: Claude Code essentials</td><td>Context and rules, plan mode, guard hooks</td><td>~35 min</td></tr><tr><td>Part 3: Walk the pipeline</td><td>Build each stage skill and use it on its own</td><td>~90 min</td></tr><tr><td>Part 4: Improve &amp; orchestrate</td><td>The factory loop and <code>/implement</code></td><td>~65 min</td></tr><tr><td>Part 5: The small factory</td><td>A whole epic, unattended, to In Acceptance</td><td>~55 min</td></tr><tr><td>Part 6: Take it home</td><td>What you built, and where it goes next</td><td>~10 min</td></tr><tr><td><strong>Total</strong></td><td>plus breaks; extras at the end if you're fast</td><td><strong>~5 h 00</strong></td></tr></tbody>
         </table>
 
         <div class="platform-note" style="margin-top: 20px">
@@ -1233,9 +1233,9 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
   board.html              the board (served by pnpm board)
   board-server.mjs        the board's server: live updates, comments, an API for tools
   docs/
-    prds/  epics/  stories/   the product track's hand-off (x-clone-v3), read-only for you
+    prds/  epics/  stories/   the PRD, epics and stories (x-clone-v3), read-only for you
     tracker/board-data.js     the board's data
-    handoff/                  where the hand-off came from
+    handoff/                  which version of the stories this is
   src/frontend/           the app you work on
     e2e/                  Playwright end-to-end tests (fixtures, sign-in, smoke)
     src/routes/ components/ queries/ lib/</div>
@@ -1245,8 +1245,8 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
          PART 1
          ============================================================ -->
       <div class="part-header">
-        <h2>Part 1: Meet the Hand-off</h2>
-        <p>Where your stories come from, and how they move. <strong>(~15 min)</strong></p>
+        <h2>Part 1: Meet the Backlog</h2>
+        <p>The stories you'll build, and how they move. <strong>(~15 min)</strong></p>
       </div>
       <article class="step-card" data-feature="1">
         <div class="step-header" onclick="toggleCard(this.parentElement)">
@@ -1266,7 +1266,7 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
     <code>docs/stories/</code>, and every story's <code>**Covers:**</code> line points to the PRD
     requirements it delivers.</p>
   <div class="step-section"><div class="step-section-title">Who owns what</div><table class="time-table"><thead><tr><th>State</th><th>Who moves it there</th><th></th></tr></thead><tbody>
-    <tr><td><strong>New</strong></td><td>the product track (the hand-off)</td><td></td></tr>
+    <tr><td><strong>New</strong></td><td>the product owner: ready to build</td><td></td></tr>
     <tr><td><strong>In Progress</strong></td><td><code>/implement-story</code>: tests first, then code</td><td>Part 3</td></tr>
     <tr><td><strong>In Review</strong></td><td><code>/implement-story</code> when everything is green</td><td>Part 3</td></tr>
     <tr><td><strong>In QA</strong></td><td><code>/review-pr</code> approves</td><td>Part 3</td></tr>
@@ -1274,10 +1274,10 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
     <tr><td><strong>Done</strong></td><td><strong>you</strong>, with the board's Accept button</td><td>Part 3</td></tr>
     </tbody></table>
     <p>Anything sent back goes to <strong>In Progress</strong>. The story text belongs to the product
-    track: you never edit it. A wrong story goes back to product as a change request.</p></div>
-  <div class="step-section"><div class="step-section-title">Check the hand-off is whole</div><p>Before building anything, check the hand-off. In Part 4 this becomes step 0 of <code>/implement</code>.</p><div class="prompt-box"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">Check the product hand-off in docs/ without changing anything. Every stories file must link back to its epic, and every epic's Stories list must link to stories that exist. Every Must Have requirement (R1, R2…) in the PRD must be in some story's Covers line, and every Covers ID must exist in the PRD. Every epic and story needs a Work Item key that's on the board in docs/tracker/board-data.js. List any failures, then any non-functional requirements (NF…) that no story covers, as warnings.</div></div></div>
+    owner: you never edit it. A story that looks wrong is a question for them, not an edit.</p></div>
+  <div class="step-section"><div class="step-section-title">Check the backlog is ready</div><p>Before building anything, check the stories are complete and linked. In Part 4 this becomes step 0 of <code>/implement</code>.</p><div class="prompt-box"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">Check the stories in docs/ are ready to build, without changing anything. Every stories file must link back to its epic, and every epic's Stories list must link to stories that exist. Every Must Have requirement (R1, R2…) in the PRD must be in some story's Covers line, and every Covers ID must exist in the PRD. Every epic and story needs a Work Item key that's on the board in docs/tracker/board-data.js. List any failures, then any non-functional requirements (NF…) that no story covers, as warnings.</div></div></div>
   <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>You should see a pass, with NF5–NF8 as warnings. Those are constraints on every story (reuse the existing API, delivery speed, scale, accessibility), not work for one story, so the review checks them every time.</span></div>
-  <ul class="checklist"><li onclick="toggleCheck(this)">Opened the board and found the ten stories in New</li><li onclick="toggleCheck(this)">Followed a card to its story, and the story to its PRD requirements</li><li onclick="toggleCheck(this)">Ran the hand-off check: pass, with NF5–NF8 as warnings</li></ul>
+  <ul class="checklist"><li onclick="toggleCheck(this)">Opened the board and found the ten stories in New</li><li onclick="toggleCheck(this)">Followed a card to its story, and the story to its PRD requirements</li><li onclick="toggleCheck(this)">Ran the backlog check: pass, with NF5–NF8 as warnings</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
         </div>
@@ -1857,7 +1857,7 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
          ============================================================ -->
       <div class="part-header">
         <h2>Part 3: Walk the Pipeline</h2>
-        <p>Build each stage skill and use it on its own, like the product track's Part 3. <strong>(~90 min)</strong></p>
+        <p>Build each stage skill and use it on its own. <strong>(~90 min)</strong></p>
       </div>
       <article class="step-card" data-feature="5">
         <div class="step-header" onclick="toggleCard(this.parentElement)">
@@ -2389,17 +2389,16 @@ Don't change anything else in the skill.</div></div>
             <span class="step-number">11</span>
             <div class="step-title-group">
               <div class="step-title">Build <code>/implement</code></div>
-              <div class="step-desc">One command: hand-off check, then all three stages, no gates</div>
+              <div class="step-desc">One command: backlog check, then all three stages, no gates</div>
             </div>
           </div>
           <div class="step-header-right"><span class="step-time">~25 min</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg></div>
         </div>
         <div class="step-body">
           
-  <p>Like the product track's <code>/discovery</code>, <code>/implement</code> runs the stage skills in
-    order, in this conversation. Unlike <code>/discovery</code>, it doesn't stop for your approval
-    between stages: the tests, the review and the QA evidence are the checks. It starts with the
-    hand-off check from Part 1, runs each story to <strong>In Acceptance</strong>, sends work back to
+  <p><code>/implement</code> runs the stage skills in order, in this conversation. It doesn't
+    stop for your approval between stages: the tests, the review and the QA evidence are the checks. It starts with the
+    backlog check from Part 1, runs each story to <strong>In Acceptance</strong>, sends work back to
     the builder up to twice, and never moves anything to Done.</p>
   <div class="prompt-box"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">Create a Claude Code skill called implement in .claude/skills/implement/, with 3 files: SKILL.md, reference/handoff-check.md, reference/board-api.md.
 
@@ -2408,7 +2407,7 @@ Write each one with exactly this content (the ==== lines only show where each fi
 ==== SKILL.md ====
 ---
 name: implement
-description: Take stories from the board to In Acceptance with no human in between: check the hand-off, then implement-story, review-pr and qa-evidence for one story, or every New story of an epic.
+description: Take stories from the board to In Acceptance with no human in between: check the backlog, then implement-story, review-pr and qa-evidence for one story, or every New story of an epic.
 argument-hint: "[story key | --epic N]"
 ---
 
@@ -2418,20 +2417,20 @@ Runs the three stage skills for one story, or for a whole epic, **without stoppi
 between them**. The tests, the review and the QA evidence are the checks. The only human step is
 acceptance on the board. Usage: `/implement [KEY]` or `/implement --epic N`.
 
-This skill owns only the order, the hand-off check and the send-back cycles, never a stage's
+This skill owns only the order, the backlog check and the send-back cycles, never a stage's
 own work. Each stage runs as its own skill in this conversation, not as a subagent. Tell each
 one the run is **unattended**.
 
 ## References (in this skill's own folder)
 
-- `reference/handoff-check.md`: step 0, the hand-off integrity check.
+- `reference/handoff-check.md`: step 0, the backlog check.
 - `reference/board-api.md`: reading the board and commenting.
 
 ## Step 0: preflight (once per run)
 
 1. Check that `implement-story`, `review-pr` and `qa-evidence` exist and can be run. If one
    can't, stop and say which.
-2. Run the hand-off check in `reference/handoff-check.md`. A **failure** stops the run: list
+2. Run the backlog check in `reference/handoff-check.md`. A **failure** stops the run: list
    every failure and change nothing. **Warnings** are listed and the run goes on.
 3. The board server answers (`/api/health`), the dev server answers on `http://localhost:5173`,
    and `src/frontend/e2e/.auth/user.json` exists. If any is missing, stop and say exactly what
@@ -2476,10 +2475,10 @@ asking, and what a person should look at first.
   changed.
 
 ==== reference/handoff-check.md ====
-# Hand-off check
+# Backlog check
 
-The stories come from the product track. Before building anything, check the hand-off is whole.
-Read the files; never fix them. A broken hand-off goes back to product.
+The stories come from the product owner. Before building anything, check they are complete and
+linked. Read the files; never fix them. Anything broken goes back to the product owner.
 
 Inputs: the PRD in `docs/prds/`, the epics file in `docs/epics/`, the stories files in
 `docs/stories/`, and `docs/tracker/board-data.js`. If there's more than one slug, check the one
@@ -2505,7 +2504,7 @@ whose stories are on the board.
 ## Report
 
 ```
-Hand-off check: PASS | FAIL
+Backlog check: PASS | FAIL
 Stories: &lt;n&gt; (&lt;n&gt; New, …) · Must Have covered: &lt;n&gt;/&lt;n&gt;
 Failures:
 - …
@@ -2576,7 +2575,7 @@ While you're creating this skill, don't ask me follow-up questions and don't run
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/implement XC-9</div></div>
   <p>Read the final report: each story's column, its loop rounds, any send-backs, and the decisions made
     without asking. Accept on the board.</p>
-  <ul class="checklist"><li onclick="toggleCheck(this)">The hand-off check passed at the start of the run</li><li onclick="toggleCheck(this)">XC-6, XC-7 and XC-9 reached In Acceptance with no input from you</li><li onclick="toggleCheck(this)">Accepted them on the board</li></ul>
+  <ul class="checklist"><li onclick="toggleCheck(this)">The backlog check passed at the start of the run</li><li onclick="toggleCheck(this)">XC-6, XC-7 and XC-9 reached In Acceptance with no input from you</li><li onclick="toggleCheck(this)">Accepted them on the board</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
         </div>
@@ -2662,7 +2661,7 @@ While you're creating this skill, don't ask me follow-up questions and don't run
     <li><strong>Four skills, each a folder:</strong> <code>implement-story</code> (tests first, the factory loop),
       <code>review-pr</code> (a fresh-eyes subagent), <code>qa-evidence</code> (a video per criterion),
       and <code>implement</code>, which runs them with no human in between.</li>
-    <li><strong>One board</strong> shared with the product track: the same six states and the same file.</li>
+    <li><strong>One board</strong> with six states, from New to Done, that every role on the team can read.</li>
     <li><strong>One human step:</strong> acceptance.</li>
   </ul>
   <div class="step-section"><div class="step-section-title">Next: the large-codebase track</div><p>The same pipeline on a codebase too big to read whole: a codebase map and explorer agent, path-scoped rules, a design and spec stage before building, an MCP server for the board, and a factory that runs while you're away.</p></div>
@@ -2736,9 +2735,9 @@ While you're creating this skill, don't ask me follow-up questions and don't run
         <div class="step-body">
           
   <ul>
-    <li>Give <code>/implement</code> a <code>--dry-run</code> that only runs the hand-off check and prints what it would build.</li>
+    <li>Give <code>/implement</code> a <code>--dry-run</code> that only runs the backlog check and prints what it would build.</li>
     <li>Make <code>/qa-evidence</code> attach a screenshot for each criterion next to the video.</li>
-    <li>Add a hook that blocks any edit to <code>docs/stories/</code>: the story text belongs to the product track.</li>
+    <li>Add a hook that blocks any edit to <code>docs/stories/</code>: the story text belongs to the product owner.</li>
   </ul>
   <ul class="checklist"><li onclick="toggleCheck(this)">Built one improvement of your own</li></ul>
 

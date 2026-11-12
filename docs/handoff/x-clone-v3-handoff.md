@@ -1,8 +1,8 @@
-# Hand-off: x-clone-v3
+# Backlog version: x-clone-v3
 
-This trail was **copied in** from the product track. Don't edit the story text here: a wrong or
-missing story goes back to product as a change request. Engineering only changes the board state
-(status and comments, through `board-server.mjs`).
+Which version of the PRD, epics and stories in `docs/` this repo builds. Don't edit the story
+text here: a story that looks wrong is a question for the product owner. Building only changes the
+board state (status and comments, through `board-server.mjs`).
 
 - **Source:** `zartis-digital/x-clone-product`, `examples/` (x-clone-v3, the synced hand-off)
 - **Source commit:** `1d1f913`, merged to `main` as `f79f6bb` (PR #1, "Shared six-state board; x-clone-v3 as the synced hand-off example"); `examples/` is identical in both
@@ -22,5 +22,5 @@ missing story goes back to product as a change request. Engineering only changes
 | `docs/tracker/board-data.js` | `8d15ff6a9fa3` |
 | `docs/tracker/tracker.md` | `5d940b75a38e` |
 
-To update this trail, the instructors move the product pin in `x-clone-program` and follow
-`PROPAGATE.md`; never edit these files by hand.
+Instructors update this backlog through `x-clone-program` (`PROPAGATE.md`); never edit these
+files by hand.

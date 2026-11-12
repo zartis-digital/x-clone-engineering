@@ -1,20 +1,20 @@
 # X Clone Engineering
 
 A frontend for an X (Twitter)-style app. The API is already deployed — this repo is
-frontend-only, living under `src/frontend/`. It is the engineering track of a workshop: the
-stories to build come from the product track (`x-clone-product`), already on the board.
+frontend-only, living under `src/frontend/`. The stories to build are already written and on
+the board.
 
-## The hand-off and the board
+## The backlog and the board
 
-- `docs/` holds the product track's hand-off, **copied in** (slug `x-clone-v3`): the idea, the
+- `docs/` holds the backlog (slug `x-clone-v3`): the idea, the
   PRD (`R1…` Must Have, `N1…` Nice to Have, `NF1…` non-functional), the epics and one stories file
   per epic. Every epic and story heading has a `**Work Item:** [XC-n](…)` key.
-  `docs/handoff/x-clone-v3-handoff.md` records where it came from.
-- **Never edit the story, epic or PRD text.** It belongs to the product track. A wrong or missing
-  story is a change request back to product, not an edit here.
+  `docs/handoff/x-clone-v3-handoff.md` records which version of the stories this is.
+- **Never edit the story, epic or PRD text.** It belongs to the product owner. A wrong or missing
+  story is a question for the product owner, not an edit here.
 - The board is `board.html`, served live by `board-server.mjs` (`pnpm board`, port in
   `.board-server.json`, default 4000). Its six states are **New → In Progress → In Review → In QA
-  → In Acceptance → Done**, the same in every track. Change a ticket only through the server's API
+  → In Acceptance → Done**. Change a ticket only through the server's API
   (`POST /api/items/<KEY>/status`, `/comments`, `/attachments`), never by editing
   `docs/tracker/board-data.js` while the server runs. Skills never move a ticket to **Done**:
   acceptance is a person's decision on the board.

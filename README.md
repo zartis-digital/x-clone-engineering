@@ -1,9 +1,8 @@
 # X Clone Engineering
 
-The **engineering track** of the X Clone workshop. The product track
-([`x-clone-product`](https://github.com/zartis-digital/x-clone-product)) has already turned a
-product brief into an idea, a PRD, four epics and ten user stories, synced to a board. This repo
-starts where it finished: the stories are already here, in `docs/`, all in **New**.
+The X Clone engineering workshop. The backlog is ready: ten user stories in four epics, with the
+PRD behind them, are in `docs/` and on the team's board, all in **New**. Like a developer joining
+the team, you take it from there.
 
 You build Claude Code skills that take a story to **In Acceptance** on their own. They write a
 Playwright test for every acceptance criterion, build until every test is green (including all
@@ -25,7 +24,7 @@ the Claude desktop app). The exercises are the same on both.
 | Part | What you do | Time |
 |---|---|---|
 | Getting started | Install, start the app and the board, save your sign-in | ~30 min |
-| 1 Meet the hand-off | The product track's stories on the board; check the hand-off | ~15 min |
+| 1 Meet the backlog | The stories on the board, and a check that they're ready | ~15 min |
 | 2 Claude Code essentials | Context and rules, plan mode, guard hooks | ~35 min |
 | 3 Walk the pipeline | Build `/implement-story`, `/review-pr` and `/qa-evidence`, and use each on its own | ~90 min |
 | 4 Improve & orchestrate | The factory loop (regression run, round cap), then `/implement`: one command, no gates | ~65 min |
@@ -78,12 +77,12 @@ x-clone-engineering/
   CLAUDE.md
   README.md
   workshop.html            ← the workshop guide
-  board.html               ← the board, shared with the other tracks
+  board.html               ← the team's board
   board-server.mjs         ← its server: live updates, comments, acceptance, an API for tools
   docs/
-    ideas/ prds/ epics/ stories/   ← the product track's hand-off (x-clone-v3); never edit the story text
+    ideas/ prds/ epics/ stories/   ← the PRD, epics and stories (x-clone-v3); never edit the story text
     tracker/board-data.js          ← the board's data
-    handoff/                       ← where the hand-off came from
+    handoff/                       ← which version of the stories this is
   src/frontend/            ← the app you'll work on
     e2e/                   ← Playwright tests: fixtures, sign-in, smoke, then one spec per story
     src/routes/ components/ hooks/ lib/ stores/
@@ -106,6 +105,6 @@ Run from `src/frontend/`:
 
 ## The board
 
-Six states, the same in every track: **New → In Progress → In Review → In QA → In Acceptance →
+Six states: **New → In Progress → In Review → In QA → In Acceptance →
 Done**. Skills move stories through the board server's API. Only a person moves one to **Done**,
 with the board's Accept button. Opened straight from disk, `board.html` is read-only.
