@@ -184,12 +184,24 @@
         background: var(--bonus-bg);
         border: 1px solid var(--bonus-border);
         overflow: hidden;
+        display: flex;
       }
 
+      /* One segment per stage: done, waiting for a person to accept, and being worked on. */
       .progress-fill {
+        flex: none;
         height: 100%;
         background: var(--success);
         transition: width 0.4s ease;
+      }
+
+      .progress-fill.to-accept {
+        background: var(--warning);
+      }
+
+      .progress-fill.in-flight {
+        background: var(--primary);
+        opacity: 0.55;
       }
 
       /* Six status columns; on narrow screens the board scrolls sideways
@@ -959,15 +971,27 @@
 
       function renderEpic(epic, children) {
         const card = renderCard(epic);
-        const done = children.filter((c) => columnOf(c) === "Done").length;
+        const count = (cols) => children.filter((c) => cols.includes(columnOf(c))).length;
+        const done = count(["Done"]);
+        const toAccept = count(["In Acceptance"]);
+        const inFlight = count(["In Progress", "In Review", "In QA"]);
+        // e.g. "1 of 3 done · 1 to accept · 1 in progress": a factory run shows up here as it goes,
+        // even though only a person moves a story to Done.
+        const parts = [done + " of " + children.length + " done"];
+        if (toAccept) parts.push(toAccept + " to accept");
+        if (inFlight) parts.push(inFlight + " in progress");
         const progress = el("div", "progress", children.length
-          ? done + " of " + children.length + " stories done"
+          ? parts.join(" · ")
           : "No stories synced for this epic yet.");
         if (children.length) {
           const track = el("div", "progress-track");
-          const fill = el("div", "progress-fill");
-          fill.style.width = Math.round((done / children.length) * 100) + "%";
-          track.appendChild(fill);
+          [["", done], ["to-accept", toAccept], ["in-flight", inFlight]].forEach(([kind, n]) => {
+            if (!n) return;
+            const fill = el("div", "progress-fill" + (kind ? " " + kind : ""));
+            fill.style.width = (n / children.length) * 100 + "%";
+            track.appendChild(fill);
+          });
+          track.title = parts.join(" · ");
           progress.appendChild(track);
         }
         card.insertBefore(progress, card.querySelector(".card-foot"));
@@ -976,7 +1000,14 @@
 
       // Last statuses seen, so a card that changes column can flash once.
       let lastColumns = new Map();
-      let epicsOpen = false;
+      // Epics start open; if someone closes them, this browser remembers it across reloads.
+      let epicsOpen = (() => {
+        try {
+          return localStorage.getItem("board.epicsOpen") !== "0";
+        } catch {
+          return true;
+        }
+      })();
 
       function render(data) {
         const items = data.items;
@@ -1026,12 +1057,17 @@
         board.replaceChildren();
 
         if (epics.length) {
-          // Collapsed by default so the columns get the screen; the reader's
-          // choice survives live redraws.
+          // Open by default, so an epic's progress is visible while stories move; the reader's
+          // choice survives live redraws and reloads.
           const panel = el("details", "epics-panel");
           if (epicsOpen) panel.setAttribute("open", "");
           panel.addEventListener("toggle", () => {
             epicsOpen = panel.open;
+            try {
+              localStorage.setItem("board.epicsOpen", epicsOpen ? "1" : "0");
+            } catch {
+              // storage unavailable: the choice lasts until the page is reloaded
+            }
           });
           const doneEpics = epics.filter((e) => columnOf(e) === "Done").length;
           panel.appendChild(el("summary", null, "Epics · " + epics.length + " (" + doneEpics + " done)"));
