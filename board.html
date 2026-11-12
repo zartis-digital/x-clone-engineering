@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local Board — X Clone Product Workshop</title>
+    <!--
+      The workshop's offline stand-in for Jira (Part 7, "Local Jira").
+      There is no server and no API: /sync-to-board writes docs/tracker/board-data.js
+      (JSON prefixed with "window.BOARD = "), and this page only reads and draws it.
+      A <script src> is used instead of fetch() because browsers block fetch() on file://.
+      Stories sit in six status columns, shared by every track:
+      New → In Progress → In Review → In QA → In Acceptance → Done;
+      the page re-reads the data file every few seconds, so tickets move without a reload.
+
+      Any item may carry an optional "comments" list (evidence, review notes):
+        "comments": [{
+          "author": "AI QA", "role": "AI QA", "created": "2026-11-06T15:30",
+          "body": "All 4 acceptance criteria pass.",
+          "attachments": [
+            { "type": "video", "path": "docs/qa/XC-18/ac1.webm",
+              "label": "AC 1: Follow button on a tweet", "ac": 1, "result": "pass" },
+            { "type": "image", "path": "docs/qa/XC-18/ac2.png", "label": "…" },
+            { "type": "link", "url": "docs/qa/XC-18/report.md", "label": "Full QA report" }
+          ]
+        }]
+      Paths are relative to this page; files live in docs/qa/<KEY>/. The page never writes
+      the data file — comments are added by tools (skills, an MCP server) or by hand.
+    -->
+    <style>
+      :root {
+        --primary: #cc785c;
+        --primary-bg: #fdf5f2;
+        --primary-border: #f0d5c8;
+        --success: #5c8a5e;
+        --warning: #b07d3a;
+        --warning-bg: #fdf6ec;
+        --warning-border: #e8d5b3;
+        --bonus: #7c6bbf;
+        --bonus-bg: #f4f1fb;
+        --bonus-border: #d4cce9;
+        --bg: #ffffff;
+        --bg-secondary: #f8f9fa;
+        --bg-card: #ffffff;
+        --text: #1a1a1a;
+        --text-secondary: #5a5a5a;
+        --text-muted: #8a8a8a;
+        --border: #e2e2e2;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --radius: 10px;
+        --radius-sm: 6px;
+        --font-sans:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        --font-mono:
+          "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary-bg: #2a1f1a;
+          --primary-border: #5a3f30;
+          --warning-bg: #2a2418;
+          --warning-border: #5a4a28;
+          --bonus-bg: #1e1a2a;
+          --bonus-border: #3a305a;
+          --bg: #141414;
+          --bg-secondary: #1a1a1a;
+          --bg-card: #1e1e1e;
+          --text: #e8e8e8;
+          --text-secondary: #aaaaaa;
+          --text-muted: #6a6a6a;
+          --border: #333333;
+          --shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+        }
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background: var(--bg-secondary);
+        color: var(--text);
+        line-height: 1.5;
+        min-height: 100vh;
+      }
+
+      .header {
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        padding: 20px 16px;
+      }
+
+      .header-inner,
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+
+      .container {
+        padding: 24px 16px 60px;
+      }
+
+      .header h1 {
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+
+      .header h1 .project-key {
+        color: var(--primary);
+        font-family: var(--font-mono);
+      }
+
+      .header-meta {
+        margin-top: 4px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .notice {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px 24px;
+        text-align: center;
+        color: var(--text-secondary);
+        box-shadow: var(--shadow);
+      }
+
+      .notice h2 {
+        font-size: 1.05rem;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+
+      .notice.error {
+        background: var(--warning-bg);
+        border-color: var(--warning-border);
+      }
+
+      .notice code,
+      .notice .detail {
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+      }
+
+      .notice .detail {
+        margin-top: 10px;
+        color: var(--text-muted);
+      }
+
+      .section-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+      }
+
+      .epics {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .progress {
+        margin-top: 10px;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      .progress-track {
+        margin-top: 4px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--bonus-bg);
+        border: 1px solid var(--bonus-border);
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--success);
+        transition: width 0.4s ease;
+      }
+
+      /* Six status columns; on narrow screens the board scrolls sideways
+         inside itself, never the whole page. */
+      .columns {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(190px, 1fr));
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+
+      .column {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px;
+        min-height: 160px;
+      }
+
+      .column-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 2px 4px 10px;
+      }
+
+      .column-count {
+        font-family: var(--font-mono);
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
+      /* Each column scrolls on its own, so the whole board fits on one
+         screen — handy on a split screen while the factory runs. */
+      .column-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: calc(100vh - 320px);
+        min-height: 60px;
+        overflow-y: auto;
+        padding: 2px;
+      }
+
+      .epics-panel {
+        margin-bottom: 20px;
+      }
+
+      .epics-panel > summary {
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+      }
+
+      .epics-panel:not([open]) > summary {
+        margin-bottom: 0;
+      }
+
+      .column-empty {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        padding: 4px;
+      }
+
+      .epic-chip {
+        display: inline-block;
+        margin-top: 8px;
+        max-width: 100%;
+        padding: 1px 8px;
+        border-radius: 10px;
+        background: var(--bonus-bg);
+        border: 1px solid var(--bonus-border);
+        color: var(--bonus);
+        font-size: 0.72rem;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .epic-chip:hover {
+        text-decoration: underline;
+      }
+
+      .comments-count {
+        font-weight: 600;
+        color: var(--primary);
+      }
+
+      .comment {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+
+      .comment-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      .comment-author {
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .comment-role {
+        padding: 0 6px;
+        border-radius: 8px;
+        background: var(--primary-bg);
+        border: 1px solid var(--primary-border);
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .comment-body {
+        margin-top: 4px;
+        white-space: pre-wrap;
+        color: var(--text);
+      }
+
+      .attachment {
+        margin-top: 8px;
+      }
+
+      .attachment-label {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+      }
+
+      .nowrap,
+      .result {
+        white-space: nowrap;
+      }
+
+      .result {
+        padding: 0 6px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+      }
+
+      .result.pass {
+        background: #e7f3e8;
+        color: var(--success);
+      }
+
+      .result.fail {
+        background: var(--warning-bg);
+        color: #b3261e;
+      }
+
+      .attachment video,
+      .attachment img {
+        display: block;
+        width: 100%;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: #000;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .live {
+        font-size: 0.8rem;
+        padding: 2px 10px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+
+      .live.on {
+        color: var(--success);
+        border-color: var(--success);
+      }
+
+      .identity {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .identity input,
+      .identity select,
+      .comment-form textarea {
+        font: inherit;
+        color: var(--text);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 4px 8px;
+      }
+
+      .readonly-banner {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .readonly-banner code {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+      }
+
+      .comment-form {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .comment-form textarea {
+        width: 100%;
+        resize: vertical;
+        font-size: 0.85rem;
+      }
+
+      .comment-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .btn.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+
+      .btn.accept {
+        background: var(--success);
+        border-color: var(--success);
+        color: #fff;
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
+      .form-status {
+        font-size: 0.75rem;
+        color: #b3261e;
+      }
+
+      /* A card that just changed column flashes once. */
+      @keyframes moved {
+        from { box-shadow: 0 0 0 4px var(--success); }
+        to { box-shadow: var(--shadow); }
+      }
+
+      .card.moved {
+        animation: moved 2.4s ease-out;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        box-shadow: var(--shadow);
+        scroll-margin-top: 20px;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+
+      .card.epic {
+        border-left: 4px solid var(--bonus);
+      }
+
+      .card.highlight {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-border);
+      }
+
+      .card-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 0.75rem;
+      }
+
+      .key {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      .key:hover {
+        text-decoration: underline;
+      }
+
+      .type {
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+      }
+
+      .card.epic .type {
+        color: var(--bonus);
+      }
+
+      .status {
+        margin-left: auto;
+        padding: 1px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+
+      .card-title {
+        margin-top: 6px;
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .card details {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .card summary {
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+      }
+
+      .description {
+        margin-top: 6px;
+        white-space: pre-wrap;
+      }
+
+      .ac-list {
+        margin: 6px 0 0 18px;
+      }
+
+      .card-foot {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      .card-foot a {
+        color: var(--primary);
+      }
+
+      .updates {
+        font-weight: 600;
+        color: var(--success);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <div class="header-top">
+          <h1 id="title">Local Board</h1>
+          <span class="live" id="live">Read-only</span>
+        </div>
+        <div id="controls"></div>
+        <div class="header-meta" id="meta">
+          Your offline stand-in for Jira. Reload this page after each sync.
+        </div>
+      </div>
+    </header>
+
+    <main class="container" id="board"></main>
+
+    <script>
+      // board.html?data=examples/tracker/board-data.js opens another data file
+      // (a relative path inside this folder); anything else falls back to the default.
+      const DATA_FILE = (() => {
+        const asked = new URLSearchParams(location.search).get("data");
+        const ok = asked && /^[\w./-]+\.js$/.test(asked) && !asked.includes("..") && !asked.startsWith("/");
+        return ok ? asked : "docs/tracker/board-data.js";
+      })();
+      const board = document.getElementById("board");
+      let loadError = "";
+
+      // Build an element with text content (never innerHTML), so item text can't break the page.
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = String(text);
+        return node;
+      }
+
+      function showNotice(kind, heading, lines, detail) {
+        board.replaceChildren();
+        const box = el("div", "notice" + (kind === "error" ? " error" : ""));
+        box.appendChild(el("h2", null, heading));
+        lines.forEach((line) => box.appendChild(el("p", null, line)));
+        if (detail) box.appendChild(el("p", "detail", detail));
+        board.appendChild(box);
+      }
+
+      function showEmpty() {
+        showNotice("empty", "No work items yet", [
+          "Run /sync-to-board on an epics file and choose “Local board (offline)”.",
+          "Then reload this page.",
+        ]);
+      }
+
+      function showBroken(detail) {
+        showNotice(
+          "error",
+          "The board data couldn't be read",
+          [
+            "Ask Claude: “Fix " + DATA_FILE + " so board.html can read it.”",
+            "Then reload this page.",
+          ],
+          detail,
+        );
+      }
+
+      function isValid(data) {
+        return (
+          data &&
+          typeof data === "object" &&
+          Array.isArray(data.items) &&
+          data.items.every((item) => item && typeof item.key === "string")
+        );
+      }
+
+      function formatTime(value) {
+        if (!value) return "";
+        return String(value).replace("T", " ");
+      }
+
+      function renderCard(item, showStatus = true, column = null) {
+        const isEpic = item.type === "Epic";
+        const card = el("article", "card" + (isEpic ? " epic" : ""));
+        card.id = item.key;
+
+        const top = el("div", "card-top");
+        const key = el("a", "key", item.key);
+        key.href = "#" + item.key;
+        top.appendChild(key);
+        top.appendChild(el("span", "type", item.type || "Item"));
+        if (showStatus) top.appendChild(el("span", "status", item.status || "New"));
+        card.appendChild(top);
+
+        card.appendChild(el("div", "card-title", item.title || "(no title)"));
+
+        const criteria = Array.isArray(item.acceptanceCriteria) ? item.acceptanceCriteria : [];
+        if (item.description || criteria.length) {
+          const more = el("details");
+          more.dataset.kind = "description";
+          const label = criteria.length
+            ? "Description and " + criteria.length + " acceptance criteria"
+            : "Description";
+          more.appendChild(el("summary", null, label));
+          if (item.description) more.appendChild(el("div", "description", item.description));
+          if (criteria.length) {
+            const list = el("ul", "ac-list");
+            criteria.forEach((c) => list.appendChild(el("li", null, c)));
+            more.appendChild(list);
+          }
+          card.appendChild(more);
+        }
+
+        const comments = Array.isArray(item.comments) ? item.comments : [];
+        if (comments.length || serverOnline) card.appendChild(renderComments(item, comments, column));
+
+        const foot = el("div", "card-foot");
+        if (item.source) {
+          const source = el("a", null, "Open in the md file →");
+          source.href = item.source;
+          foot.appendChild(source);
+        }
+        const times = el("span");
+        const updates = Number(item.updates) || 0;
+        times.textContent = item.updated ? "Updated " + formatTime(item.updated) : "";
+        if (updates > 0) {
+          times.appendChild(document.createTextNode(" · "));
+          times.appendChild(el("span", "updates", "updated ×" + updates));
+        }
+        foot.appendChild(times);
+        if (comments.length) {
+          const videos = comments.reduce(
+            (n, c) => n + (Array.isArray(c.attachments) ? c.attachments.filter((a) => a && a.type === "video").length : 0),
+            0,
+          );
+          foot.appendChild(el("span", "comments-count",
+            "💬 " + comments.length + (videos ? " · ▶ " + videos : "")));
+        }
+        card.appendChild(foot);
+
+        return card;
+      }
+
+      // Only relative paths (files next to this page) or http(s) links are
+      // rendered — never javascript: or other schemes from the data file.
+      function safeUrl(value) {
+        const url = String(value || "").trim();
+        if (!url) return "";
+        if (/^https?:\/\//i.test(url)) return url;
+        if (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith("//")) return "";
+        return url;
+      }
+
+      function renderAttachment(itemKey, attachment) {
+        const box = el("div", "attachment");
+        const label = el("div", "attachment-label");
+        if (attachment.ac !== undefined && attachment.ac !== null && attachment.ac !== "") {
+          label.appendChild(el("span", "nowrap", "AC " + attachment.ac));
+        }
+        if (attachment.result === "pass" || attachment.result === "fail") {
+          label.appendChild(el("span", "result " + attachment.result,
+            attachment.result === "pass" ? "✓ pass" : "✗ fail"));
+        }
+        if (attachment.label) label.appendChild(el("span", null, attachment.label));
+        box.appendChild(label);
+
+        const src = safeUrl(attachment.path || attachment.url);
+        if (attachment.type === "video" && src) {
+          const video = el("video");
+          video.controls = true;
+          video.preload = "metadata";
+          video.playsInline = true;
+          video.src = src;
+          // Lets a live redraw keep this exact player (and its playback).
+          video.dataset.videoKey = itemKey + "|" + src;
+          box.appendChild(video);
+        } else if (attachment.type === "image" && src) {
+          const img = el("img");
+          img.src = src;
+          img.alt = attachment.label || "Evidence image";
+          img.loading = "lazy";
+          box.appendChild(img);
+        } else if (src) {
+          const link = el("a", null, attachment.label || src);
+          link.href = src;
+          link.target = "_blank";
+          link.rel = "noopener";
+          box.appendChild(link);
+        }
+        return box;
+      }
+
+      function renderComments(item, comments, column) {
+        const itemKey = item.key;
+        const thread = el("details");
+        thread.dataset.kind = "comments";
+        thread.appendChild(el("summary", null, "Comments (" + comments.length + ")"));
+        comments.forEach((comment) => {
+          if (!comment || typeof comment !== "object") return;
+          const box = el("div", "comment");
+          const head = el("div", "comment-head");
+          head.appendChild(el("span", "comment-author", comment.author || "Unknown"));
+          if (comment.role && comment.role !== comment.author) {
+            head.appendChild(el("span", "comment-role", comment.role));
+          }
+          if (comment.created) head.appendChild(el("span", null, formatTime(comment.created)));
+          box.appendChild(head);
+          if (comment.body) box.appendChild(el("div", "comment-body", comment.body));
+          (Array.isArray(comment.attachments) ? comment.attachments : []).forEach((a) => {
+            if (a && typeof a === "object") box.appendChild(renderAttachment(itemKey, a));
+          });
+          thread.appendChild(box);
+        });
+        if (serverOnline) thread.appendChild(renderCommentForm(item, column));
+        return thread;
+      }
+
+      // ---------------------------------------------------------- writing (server mode)
+      // Text being typed survives live redraws: drafts are kept per ticket.
+      const drafts = new Map();
+
+      function store(key, value) {
+        try {
+          if (value === undefined) return localStorage.getItem(key) || "";
+          localStorage.setItem(key, value);
+        } catch {
+          return "";
+        }
+      }
+
+      async function api(pathname, body) {
+        const res = await fetch(pathname, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "The board server refused the change (" + res.status + ")");
+        return data;
+      }
+
+      function renderCommentForm(item, column) {
+        const form = el("form", "comment-form");
+        const input = el("textarea");
+        input.rows = 2;
+        input.dataset.draftKey = item.key;
+        input.placeholder = column === "In Acceptance"
+          ? "Comment, or the reason for sending it back…"
+          : "Add a comment…";
+        input.setAttribute("aria-label", "Comment on " + item.key);
+        input.value = drafts.get(item.key) || "";
+        input.addEventListener("input", () => drafts.set(item.key, input.value));
+        form.appendChild(input);
+
+        const actions = el("div", "comment-actions");
+        const post = el("button", "btn primary", "Comment");
+        post.type = "submit";
+        actions.appendChild(post);
+        let accept, sendBack;
+        if (column === "In Acceptance") {
+          accept = el("button", "btn accept", "Accept → Done");
+          accept.type = "button";
+          sendBack = el("button", "btn", "Send back → In Progress");
+          sendBack.type = "button";
+          actions.appendChild(accept);
+          actions.appendChild(sendBack);
+        }
+        form.appendChild(actions);
+        const status = el("div", "form-status");
+        status.setAttribute("role", "status");
+        form.appendChild(status);
+
+        async function run(kind) {
+          const author = store("board-author").trim();
+          const role = store("board-role") || "Human QA";
+          const body = input.value.trim();
+          if (!author) {
+            status.textContent = "Type your name at the top of the board first.";
+            document.getElementById("author")?.focus();
+            return;
+          }
+          if (kind === "comment" && !body) {
+            status.textContent = "Write a comment first.";
+            return;
+          }
+          if (kind === "back" && !body) {
+            status.textContent = "Say why it's going back — that becomes the comment.";
+            input.focus();
+            return;
+          }
+          [post, accept, sendBack].forEach((b) => b && (b.disabled = true));
+          status.textContent = "";
+          try {
+            const key = encodeURIComponent(item.key);
+            if (kind === "comment") {
+              await api("/api/items/" + key + "/comments", { author, role, body });
+            } else if (kind === "accept") {
+              await api("/api/items/" + key + "/comments", { author, role, body: body || "Accepted." });
+              await api("/api/items/" + key + "/status", { status: "Done", author });
+            } else {
+              await api("/api/items/" + key + "/comments", { author, role, body: "Sent back: " + body });
+              await api("/api/items/" + key + "/status", { status: "In Progress", author });
+            }
+            drafts.delete(item.key);
+            input.value = "";
+            load();
+          } catch (err) {
+            status.textContent = err.message;
+            [post, accept, sendBack].forEach((b) => b && (b.disabled = false));
+          }
+        }
+
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          run("comment");
+        });
+        if (accept) accept.addEventListener("click", () => run("accept"));
+        if (sendBack) sendBack.addEventListener("click", () => run("back"));
+        return form;
+      }
+
+      // Header: live/read-only indicator, and who is commenting (remembered in this browser).
+      function renderControls() {
+        const live = document.getElementById("live");
+        const controls = document.getElementById("controls");
+        controls.replaceChildren();
+        if (serverOnline) {
+          live.textContent = "● Live — comments on";
+          live.className = "live on";
+          const who = el("div", "identity");
+          who.appendChild(el("span", null, "Commenting as"));
+          const name = el("input");
+          name.id = "author";
+          name.placeholder = "Your name";
+          name.setAttribute("aria-label", "Your name");
+          name.value = store("board-author");
+          name.addEventListener("input", () => store("board-author", name.value));
+          const role = el("select");
+          role.setAttribute("aria-label", "Your role");
+          ["Human QA", "PO", "Developer", "Reviewer"].forEach((r) => {
+            const option = el("option", null, r);
+            option.value = r;
+            role.appendChild(option);
+          });
+          role.value = store("board-role") || "Human QA";
+          role.addEventListener("change", () => store("board-role", role.value));
+          who.appendChild(name);
+          who.appendChild(role);
+          controls.appendChild(who);
+        } else {
+          live.textContent = "Read-only";
+          live.className = "live";
+          const banner = el("div", "readonly-banner");
+          banner.appendChild(document.createTextNode("To comment and accept tickets, run "));
+          banner.appendChild(el("code", null, "pnpm board"));
+          banner.appendChild(document.createTextNode(" in src/frontend and open "));
+          banner.appendChild(el("code", null, "http://localhost:4000"));
+          banner.appendChild(document.createTextNode(" (leave it running in its own terminal)."));
+          controls.appendChild(banner);
+        }
+      }
+
+      // The board's columns, left to right. Anything else ("To Do" from
+      // /sync-to-board, an empty status) is treated as New.
+      const COLUMNS = ["New", "In Progress", "In Review", "In QA", "In Acceptance", "Done"];
+
+      function columnOf(item) {
+        const status = String(item.status || "").trim().toLowerCase();
+        const match = COLUMNS.find((c) => c.toLowerCase() === status);
+        return match || "New";
+      }
+
+      function renderEpic(epic, children) {
+        const card = renderCard(epic);
+        const done = children.filter((c) => columnOf(c) === "Done").length;
+        const progress = el("div", "progress", children.length
+          ? done + " of " + children.length + " stories done"
+          : "No stories synced for this epic yet.");
+        if (children.length) {
+          const track = el("div", "progress-track");
+          const fill = el("div", "progress-fill");
+          fill.style.width = Math.round((done / children.length) * 100) + "%";
+          track.appendChild(fill);
+          progress.appendChild(track);
+        }
+        card.insertBefore(progress, card.querySelector(".card-foot"));
+        return card;
+      }
+
+      // Last statuses seen, so a card that changes column can flash once.
+      let lastColumns = new Map();
+      let epicsOpen = false;
+
+      function render(data) {
+        const items = data.items;
+        const project = data.project || {};
+        const epics = items.filter((i) => i.type === "Epic");
+        const stories = items.filter((i) => i.type !== "Epic");
+        const epicByKey = new Map(epics.map((e) => [e.key, e]));
+
+        const title = document.getElementById("title");
+        title.replaceChildren();
+        title.appendChild(el("span", "project-key", project.key || "Local"));
+        title.appendChild(document.createTextNode(" " + (project.name || "Local Board")));
+        document.getElementById("meta").textContent =
+          epics.length + " epics · " + stories.length +
+          " stories · offline stand-in for Jira · updates live while this page is open";
+
+        if (items.length === 0) {
+          showEmpty();
+          return;
+        }
+
+        // Keep what the reader had open across a live redraw — and keep the
+        // same <video> elements, so evidence that's playing isn't interrupted
+        // when some other ticket moves.
+        const openDetails = new Set(
+          [...board.querySelectorAll(".card details[open]")].map(
+            (d) => d.closest(".card")?.id + ":" + (d.dataset.kind || "")
+          )
+        );
+        // Browsers pause a video the moment it leaves the page, so note which
+        // ones were playing and resume them once they're back in place.
+        const liveVideos = new Map(
+          [...board.querySelectorAll("video[data-video-key]")].map((v) => [
+            v.dataset.videoKey,
+            { video: v, playing: !v.paused && !v.ended },
+          ])
+        );
+        const columnScroll = board.querySelector(".columns")?.scrollLeft || 0;
+        const focused = document.activeElement;
+        const focusedDraft = focused && focused.dataset && focused.dataset.draftKey
+          ? { key: focused.dataset.draftKey, start: focused.selectionStart, end: focused.selectionEnd }
+          : null;
+        const cardScroll = new Map(
+          [...board.querySelectorAll(".column-cards")].map((c, i) => [i, c.scrollTop])
+        );
+
+        board.replaceChildren();
+
+        if (epics.length) {
+          // Collapsed by default so the columns get the screen; the reader's
+          // choice survives live redraws.
+          const panel = el("details", "epics-panel");
+          if (epicsOpen) panel.setAttribute("open", "");
+          panel.addEventListener("toggle", () => {
+            epicsOpen = panel.open;
+          });
+          const doneEpics = epics.filter((e) => columnOf(e) === "Done").length;
+          panel.appendChild(el("summary", null, "Epics · " + epics.length + " (" + doneEpics + " done)"));
+          const strip = el("section", "epics");
+          epics.forEach((epic) =>
+            strip.appendChild(renderEpic(epic, stories.filter((s) => s.parent === epic.key)))
+          );
+          panel.appendChild(strip);
+          board.appendChild(panel);
+        }
+
+        board.appendChild(el("div", "section-title", "Stories"));
+        const columns = el("section", "columns");
+        const nextColumns = new Map();
+        COLUMNS.forEach((name) => {
+          // Most recently updated first: a ticket that just moved shows up
+          // at the top of its new column, where people are looking.
+          const inColumn = stories
+            .filter((s) => columnOf(s) === name)
+            .sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || "")));
+          const column = el("div", "column");
+          const head = el("div", "column-head");
+          head.appendChild(el("span", null, name));
+          head.appendChild(el("span", "column-count", inColumn.length));
+          column.appendChild(head);
+          const cards = el("div", "column-cards");
+          if (!inColumn.length) cards.appendChild(el("div", "column-empty", "Nothing here"));
+          inColumn.forEach((story) => {
+            const card = renderCard(story, false, name);
+            const epic = epicByKey.get(story.parent);
+            const chip = el("a", "epic-chip", epic ? epic.key + " · " + (epic.title || "") : "No epic");
+            if (epic) chip.href = "#" + epic.key;
+            card.insertBefore(chip, card.querySelector(".card-foot"));
+            const previous = lastColumns.get(story.key);
+            if (previous && previous !== name) card.classList.add("moved");
+            nextColumns.set(story.key, name);
+            cards.appendChild(card);
+          });
+          column.appendChild(cards);
+          columns.appendChild(column);
+        });
+        board.appendChild(columns);
+        lastColumns = nextColumns;
+
+        board.querySelectorAll(".card details").forEach((d) => {
+          if (openDetails.has(d.closest(".card").id + ":" + (d.dataset.kind || ""))) {
+            d.setAttribute("open", "");
+          }
+        });
+        board.querySelectorAll("video[data-video-key]").forEach((fresh) => {
+          const kept = liveVideos.get(fresh.dataset.videoKey);
+          if (!kept) return;
+          fresh.replaceWith(kept.video);
+          if (kept.playing) kept.video.play().catch(() => {});
+        });
+        columns.scrollLeft = columnScroll;
+        board.querySelectorAll(".column-cards").forEach((c, i) => {
+          if (cardScroll.has(i)) c.scrollTop = cardScroll.get(i);
+        });
+        if (focusedDraft) {
+          const box = board.querySelector('textarea[data-draft-key="' + CSS.escape(focusedDraft.key) + '"]');
+          if (box) {
+            box.focus({ preventScroll: true });
+            box.setSelectionRange(focusedDraft.start, focusedDraft.end);
+          }
+        }
+
+        highlightFromHash(false);
+      }
+
+      // board.html#XC-3 (the link written into the md files) scrolls to that card and highlights it.
+      // Live redraws re-apply the highlight without scrolling the reader away.
+      function highlightFromHash(scroll = true) {
+        document.querySelectorAll(".card.highlight").forEach((c) => c.classList.remove("highlight"));
+        const key = decodeURIComponent(location.hash.slice(1));
+        if (!key) return;
+        const card = document.getElementById(key);
+        if (!card) return;
+        const panel = card.closest("details.epics-panel");
+        if (panel && !panel.open) panel.open = true;
+        card.classList.add("highlight");
+        if (scroll) card.scrollIntoView({ block: "center", inline: "center" });
+      }
+
+      window.addEventListener("hashchange", () => highlightFromHash());
+
+      // A syntax error in the data file surfaces here, not as a script "error" event.
+      window.addEventListener("error", (e) => {
+        if (e.filename && e.filename.indexOf("board-data.js") !== -1) {
+          loadError = e.message + (e.lineno ? " (line " + e.lineno + ")" : "");
+        }
+      });
+
+      // Live refresh: re-read the data file every few seconds by re-adding the
+      // <script> (with a cache-busting query), and redraw only when it changed.
+      // A failed read during a live refresh (e.g. the file caught mid-write by
+      // a sync) keeps the last good board on screen and simply tries again.
+      const REFRESH_MS = 2500;
+      let lastJson = null;
+      let hasRendered = false;
+      let serverOnline = false;
+      let controlsShown = false;
+      const SERVED = location.protocol === "http:" || location.protocol === "https:";
+
+      // Served by board-server.mjs → comments on. Opened from disk → read-only.
+      async function checkServer() {
+        let online = false;
+        if (SERVED) {
+          try {
+            const res = await fetch("/api/health", { cache: "no-store" });
+            online = res.ok && (await res.json()).board === true;
+          } catch {
+            online = false;
+          }
+        }
+        if (online !== serverOnline || !controlsShown) {
+          serverOnline = online;
+          lastJson = null; // redraw with or without the comment boxes
+          // Rebuilt only when the state changes, so typing your name isn't interrupted.
+          renderControls();
+          controlsShown = true;
+        }
+      }
+
+      function load() {
+        loadError = "";
+        window.BOARD = undefined;
+        document.querySelectorAll("script[data-board]").forEach((old) => old.remove());
+        const script = document.createElement("script");
+        script.dataset.board = "";
+        script.src = DATA_FILE + "?t=" + Date.now();
+        script.onload = () => {
+          if (loadError || !isValid(window.BOARD)) {
+            if (!hasRendered) {
+              showBroken(loadError || "The file loaded, but it doesn't set window.BOARD with an items list.");
+            }
+            return;
+          }
+          const json = JSON.stringify(window.BOARD);
+          if (json === lastJson) return;
+          lastJson = json;
+          hasRendered = true;
+          render(window.BOARD);
+        };
+        // No data file yet: nothing has been synced to the local board.
+        script.onerror = () => {
+          if (!hasRendered) showEmpty();
+        };
+        document.body.appendChild(script);
+      }
+
+      checkServer().then(load);
+      setInterval(() => checkServer().then(load), REFRESH_MS);
+    </script>
+  </body>
+</html>

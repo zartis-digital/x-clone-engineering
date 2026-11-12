@@ -1,0 +1,11 @@
+# Personal Claude Code settings (each participant keeps their own)
+.claude/settings.local.json
+
+# OS / editor noise
+.DS_Store
+
+# Local board server state (port, pid)
+.board-server.json
+
+# QA evidence videos and images, served by the board server from disk
+docs/qa/

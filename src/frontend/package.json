@@ -9,7 +9,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "playwright test --project=verify",
+    "e2e:evidence": "playwright test --project=evidence",
+    "e2e:login": "node e2e/login.mjs",
+    "board": "node ../../board-server.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -35,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "1.65.0",
     "@tanstack/router-plugin": "^1.157.18",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

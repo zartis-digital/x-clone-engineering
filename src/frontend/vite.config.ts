@@ -43,6 +43,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     test: {
+      // Vitest owns src/; the Playwright end-to-end tests in e2e/ run with `pnpm e2e`.
+      include: ["src/**/*.{test,spec}.{ts,tsx}"],
       environment: "jsdom",
       setupFiles: ["./src/test/setup.ts"],
       globals: true,
