@@ -1,7 +1,41 @@
-# X Clone Starter
+# X Clone Engineering
 
 A frontend for an X (Twitter)-style app. The API is already deployed — this repo is
-frontend-only, living under `src/frontend/`.
+frontend-only, living under `src/frontend/`. The stories to build are already written and on
+the board.
+
+## The backlog and the board
+
+- `docs/` holds the backlog (slug `x-clone-v3`): the idea, the
+  PRD (`R1…` Must Have, `N1…` Nice to Have, `NF1…` non-functional), the epics and one stories file
+  per epic. Every epic and story heading has a `**Work Item:** [XC-n](…)` key.
+  `docs/handoff/x-clone-v3-handoff.md` records which version of the stories this is.
+- **Never edit the story, epic or PRD text.** It belongs to the product owner. A wrong or missing
+  story is a question for the product owner, not an edit here.
+- The board is `board.html`, served live by `board-server.mjs` (`pnpm board`, port in
+  `.board-server.json`, default 4000). Its six states are **New → In Progress → In Review → In QA
+  → In Acceptance → Done**. Change a ticket only through the server's API
+  (`POST /api/items/<KEY>/status`, `/comments`, `/attachments`), never by editing
+  `docs/tracker/board-data.js` while the server runs. Skills never move a ticket to **Done**:
+  acceptance is a person's decision on the board.
+- NF requirements that no story covers (in x-clone-v3: NF5–NF8) are constraints on every story.
+
+## End-to-end tests (Playwright)
+
+- `src/frontend/e2e/`, run against the dev server and the shared API, signed in as the person
+  (`pnpm e2e:login` saves the session to `e2e/.auth/user.json`; never sign in or handle a
+  password yourself).
+- One spec per story: `e2e/<key>.spec.ts` (for example `xc-8.spec.ts`), with one test per
+  acceptance criterion named `AC<n>: <criterion>`. Import `test` and `expect` from `./fixtures`,
+  and wrap user actions in `evidence.step("…", …)`, whose captions show in the QA videos.
+- Two projects run the same tests: `verify` (`pnpm e2e`, fast) and `evidence`
+  (`pnpm e2e:evidence`, human-paced, one video per test, results in `test-results/results.json`).
+- Never click **Sign out** in a spec that uses the saved sign-in: it ends the session on the server
+  and every later test fails until a person runs `pnpm e2e:login` again. Check signed-out screens
+  in a fresh context (`browser.newContext({ storageState: { cookies: [], origins: [] } })`).
+- `pnpm exec tsc -b` typechecks the specs too (`tsconfig.e2e.json`).
+- Never weaken, skip or delete a test to get green. Every earlier story's spec is part of the
+  regression suite.
 
 ## Stack
 
@@ -61,13 +95,17 @@ src/frontend/src/
 ## Workshop note
 
 - The API is shared by everyone in the room. When testing in the browser (including via
-  MCP browser tools), sign in with your own account — sign up if you haven't — rather than
-  the shared fallback test account from `workshop.html`. Likes, retweets, and follows are
-  per-account state shared live with whoever else is using that account.
+  Playwright), sign in with your own account — sign up if you haven't — never a shared one.
+  Likes, retweets, and follows are per-account state shared live with whoever else is using
+  that account.
 
 ## Commands (run from `src/frontend/`)
 
 - `pnpm dev` — start the dev server
+- `pnpm board` — start the board server (http://localhost:4000)
 - `pnpm build` — typecheck + production build
 - `pnpm lint` — ESLint
 - `pnpm test` — Vitest
+- `pnpm e2e:login` — save your sign-in for the end-to-end tests (once)
+- `pnpm e2e [spec]` — end-to-end tests, fast (`verify`)
+- `pnpm e2e:evidence [spec]` — end-to-end tests at human pace, with a video per test

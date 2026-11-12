@@ -1,0 +1,13 @@
+# pnpm settings for the frontend. It's a single package, not a multi-package workspace:
+# pnpm 9 requires the packages line in this file anyway.
+packages:
+  - "."
+
+# Which dependencies may run install scripts, answered here so `pnpm install` doesn't stop at
+# "Ignored build scripts". esbuild needs its native binary (Vite uses it). msw doesn't: its
+# script only copies a service worker into the app, which this app doesn't use.
+allowBuilds: # pnpm 11 and later
+  esbuild: true
+  msw: false
+onlyBuiltDependencies: # pnpm 10 (pnpm 9 runs every install script anyway)
+  - esbuild
