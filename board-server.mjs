@@ -112,6 +112,16 @@ function findItem(board, key) {
   return item
 }
 
+// An epic's status follows its stories: all New → New, all Done → Done, all In Acceptance or Done
+// → In Acceptance, anything else once work has started → In Progress.
+function epicStatus(statuses) {
+  const s = statuses.map((x) => STATUSES.find((k) => k.toLowerCase() === String(x ?? "").trim().toLowerCase()) ?? "New")
+  if (!s.length || s.every((x) => x === "New")) return "New"
+  if (s.every((x) => x === "Done")) return "Done"
+  if (s.every((x) => x === "In Acceptance" || x === "Done")) return "In Acceptance"
+  return "In Progress"
+}
+
 function touch(item) {
   item.updated = now()
   item.updates = (Number(item.updates) || 0) + 1
@@ -263,8 +273,20 @@ async function handle(req, res, port) {
       if (!status) throw new HttpError(400, `status must be one of: ${STATUSES.join(", ")}`)
       const updated = await updateBoard((board) => {
         const item = findItem(board, key)
+        if (item.type === "Epic") {
+          throw new HttpError(400, `${key} is an epic: its status follows its stories, so move a story instead`)
+        }
         item.status = status
         touch(item)
+        // The story's epic follows its stories (board.html applies the same rule).
+        const epic = item.parent ? board.items.find((i) => i.key === item.parent && i.type === "Epic") : null
+        if (epic) {
+          const next = epicStatus(board.items.filter((i) => i.parent === epic.key).map((i) => i.status))
+          if (epic.status !== next) {
+            epic.status = next
+            touch(epic)
+          }
+        }
         return item
       })
       return send(res, 200, updated)

@@ -969,8 +969,17 @@
         return match || "New";
       }
 
+      // An epic's status follows its stories (the board server applies the same rule).
+      function epicStatus(children) {
+        const cols = children.map(columnOf);
+        if (!cols.length || cols.every((c) => c === "New")) return "New";
+        if (cols.every((c) => c === "Done")) return "Done";
+        if (cols.every((c) => c === "In Acceptance" || c === "Done")) return "In Acceptance";
+        return "In Progress";
+      }
+
       function renderEpic(epic, children) {
-        const card = renderCard(epic);
+        const card = renderCard({ ...epic, status: epicStatus(children) });
         const count = (cols) => children.filter((c) => cols.includes(columnOf(c))).length;
         const done = count(["Done"]);
         const toAccept = count(["In Acceptance"]);
@@ -1069,7 +1078,9 @@
               // storage unavailable: the choice lasts until the page is reloaded
             }
           });
-          const doneEpics = epics.filter((e) => columnOf(e) === "Done").length;
+          const doneEpics = epics.filter(
+            (e) => epicStatus(stories.filter((s) => s.parent === e.key)) === "Done"
+          ).length;
           panel.appendChild(el("summary", null, "Epics · " + epics.length + " (" + doneEpics + " done)"));
           const strip = el("section", "epics");
           epics.forEach((epic) =>
