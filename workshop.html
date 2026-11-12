@@ -1449,9 +1449,9 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
                 <span class="prompt-label">Prompt</span>
                 <button class="copy-btn" onclick="copyText(this)">Copy</button>
                 <div class="prompt-content">
-                  Remember that the workshop's fallback test account (only
-                  use it if your own sign-up isn't working) is
-                  cluster-test@x-clone.dev / ClusterTest123!.
+                  Remember that on the workshop board I sign as
+                  &lt;your name&gt;, and that I review evidence videos before
+                  accepting anything.
                 </div>
               </div>
               And confirm it stuck:
@@ -1830,6 +1830,7 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
             </div>
           </details>
 
+<div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Guard not firing? Claude reads <code>.claude/settings.json</code> from the folder you started it in, so start it from the repository root, not <code>src/frontend</code>. If reading <code>.env</code> is refused before your hook exists, a permission rule got there first: test the edit guard on <code>routeTree.gen.ts</code>, where your hook's own reason shows.</span></div>
           <ul class="checklist">
             <li onclick="toggleCheck(this)">
               Reading <code>.env</code> is blocked with a clear reason
@@ -1988,6 +1989,7 @@ and pass it with `-d @file`.
 While you're creating this skill, don't ask me follow-up questions and don't run it yet.</div></div>
   <div class="step-section"><div class="step-section-title">Run it on Story 1.1 (XC-5)</div><p>Sign-up already exists in the app, so this first run mostly writes tests. Watch the browser open: Claude is checking its own work.</p><div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/implement-story XC-5</div></div><p>On the board, XC-5 moves to <strong>In Progress</strong>, then <strong>In Review</strong>, with a comment listing the checks. Open <code>src/frontend/e2e/xc-5.spec.ts</code>: one test per criterion.</p></div>
   <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Writing the tests first keeps the builder honest: the code is done when the criteria are proven, not when it looks done. The next skill checks the tests themselves.</span></div>
+  <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>&ldquo;Unknown skill&rdquo; right after you create one is normal: Claude picks up new skills within a minute or two. Wait a moment, or restart Claude, and run it again. The same goes for every skill you build today.</span></div>
   <ul class="checklist"><li onclick="toggleCheck(this)">Created <code>.claude/skills/implement-story/</code> with <code>SKILL.md</code> and <code>reference/board-api.md</code></li><li onclick="toggleCheck(this)">XC-5 is In Review, with a comment listing the checks</li><li onclick="toggleCheck(this)"><code>e2e/xc-5.spec.ts</code> has one <code>AC&lt;n&gt;</code> test per criterion, and all pass</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
@@ -2141,6 +2143,7 @@ and pass it with `-d @file`.
 
 While you're creating this skill, don't ask me follow-up questions and don't run it yet.</div></div>
   <div class="step-section"><div class="step-section-title">Run it</div><div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/review-pr XC-5</div></div><p>Read <code>docs/reviews/xc-5-review.md</code>. Look at the <em>Criteria → tests</em> list: each criterion is mapped to its test and marked ok, weak or missing. Approved, XC-5 moves to <strong>In QA</strong>; otherwise it goes back to <strong>In Progress</strong> with the reasons as a comment.</p></div>
+  <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Fresh eyes cut both ways: the reviewer doesn't see the builder's hand-over comment either. A concern the builder flagged on the board is for the product owner and for you at acceptance; don't expect the review to pick it up.</span></div>
   <ul class="checklist"><li onclick="toggleCheck(this)">Created <code>.claude/skills/review-pr/</code> with its reviewer file and board reference</li><li onclick="toggleCheck(this)">Read the review file and its criteria-to-tests map</li><li onclick="toggleCheck(this)">XC-5 moved to In QA (or back, with reasons you agree with)</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
@@ -2333,6 +2336,7 @@ While you're creating this skill, don't ask me follow-up questions and don't run
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/review-pr XC-8</div></div>
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/qa-evidence XC-8</div></div>
   <p>Then, as PO, drag it to Done, or back to In Progress with a reason.</p>
+  <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Expect one honest gap here. The story says tweets from <em>all users</em>, but the API's timeline returns your own tweets and those of people you follow, and there's no backend work in this workshop. Claude should build what the API allows and raise the gap in its comments, not fake it in a test. That's the right outcome: a question for the product owner.</span></div>
   <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Notice what you did between the three commands: nothing, except start the next one. That's the cue for Part 4.</span></div>
   <ul class="checklist"><li onclick="toggleCheck(this)">XC-8 went through In Progress, In Review and In QA to In Acceptance</li><li onclick="toggleCheck(this)">Accepted (or sent back) on the board</li></ul>
 
@@ -2374,13 +2378,20 @@ stop and ask the person to run `pnpm e2e:login`. Never sign in or handle a passw
 
 ## Each round
 
-1. `pnpm exec tsc -b`: types
+1. `pnpm exec tsc -b`: types, for the app and the specs in `e2e/`
 2. `pnpm lint`: lint
 3. `pnpm exec vitest related --run &lt;the files you changed&gt;`: unit tests for what you touched
 4. `pnpm e2e e2e/&lt;key&gt;.spec.ts`: the story's own end-to-end tests
 
 Something red: read the output (and the screenshot or `error-context.md` a failed Playwright test
-points to), fix the **code**, and start the next round.
+points to), fix the **code**, and start the next round. A test that passes and fails by turns is
+flaky, not fixed: read its trace (`pnpm exec playwright show-trace &lt;trace.zip&gt;`) instead of
+re-running it.
+
+**Never click Sign out in a spec that uses the saved sign-in.** It ends that session on the server,
+and every later test fails as signed-out until a person runs `pnpm e2e:login` again. To check a
+signed-out screen, open a fresh context:
+`browser.newContext({ storageState: { cookies: [], origins: [] }, baseURL: test.info().project.use.baseURL })`.
 
 ## When the story's tests are green: the regression run
 
@@ -2608,11 +2619,12 @@ While you're creating this skill, don't ask me follow-up questions and don't run
     but each one still writes its tests, gets reviewed and posts its evidence.</p>
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/implement --epic 1</div></div>
   <p>Then Story 2.2, posting a tweet with an optional image: a real feature, and the first run where the
-    regression suite protects the timeline you built in Part 3.</p>
+    regression suite protects the timeline you built in Part 3. The story leaves the limits open; the API
+    sets them (280 characters; a JPEG, PNG, GIF or WebP image up to 5 MB), so the app should use those.</p>
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/implement XC-9</div></div>
   <p>Read the final report: each story's column, its loop rounds, any send-backs, and the decisions made
     without asking. Accept on the board.</p>
-  <ul class="checklist"><li onclick="toggleCheck(this)">The backlog check passed at the start of the run</li><li onclick="toggleCheck(this)">XC-6, XC-7 and XC-9 reached In Acceptance with no input from you</li><li onclick="toggleCheck(this)">Accepted them on the board</li></ul>
+  <ul class="checklist"><li onclick="toggleCheck(this)">The backlog check passed at the start of the run</li><li onclick="toggleCheck(this)"><code>--epic 1</code> took XC-6 and XC-7, and <code>/implement XC-9</code> took XC-9, to In Acceptance with no input from you</li><li onclick="toggleCheck(this)">Accepted them on the board</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
         </div>
@@ -2644,6 +2656,7 @@ While you're creating this skill, don't ask me follow-up questions and don't run
     runs, watch the board: cards move on their own, and video comments appear. When a story reaches
     <strong>In Acceptance</strong>, review its evidence and accept it, or send it back, without waiting
     for the run to end.</p>
+  <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Epic 3 is the hard one, and it's where the loop earns its keep. Liking and unliking quickly is a real race condition, and a test can pass and fail by turns. Flaky isn't fixed: the loop reads the Playwright trace (<code>pnpm exec playwright show-trace</code>) to find out why, and you can too. Expect XC-10 to take several rounds.</span></div>
   <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>This is what the large-codebase track scales up: a design and spec stage, an MCP board instead of curl, and a notification when a ticket waits for you.</span></div>
   <ul class="checklist"><li onclick="toggleCheck(this)">Epic 3's three stories reached In Acceptance</li><li onclick="toggleCheck(this)">Reviewed the evidence and accepted (or sent back) each one</li></ul>
 
@@ -2664,11 +2677,13 @@ While you're creating this skill, don't ask me follow-up questions and don't run
         <div class="step-body">
           
   <p>As PO, drag a story from <strong>In Acceptance</strong> back to <strong>In Progress</strong> and give a concrete
-    change as the reason, for example &ldquo;the like count should show 1K instead of 1000 above a thousand&rdquo;.
-    Then run it again:</p>
+    change to one of its criteria as the reason, for example, for XC-10's AC3: &ldquo;when a like fails, the message
+    should say <em>Couldn't save your like. Try again.</em>, not a generic error&rdquo;. Then run it again:</p>
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/implement XC-10</div></div>
-  <p><code>/implement-story</code> reads your comment as its to-do list, adds or changes a test for it,
-    fixes the code, and the story goes through review and QA again.</p>
+  <p><code>/implement-story</code> reads your comment as its to-do list, tightens that criterion's test
+    (it stays <code>AC3</code>, so QA maps its new video to the same criterion), fixes the code, and the story
+    goes through review and QA again. A send-back that adds behaviour no criterion covers is a new story:
+    a question for the product owner, not a send-back.</p>
   <ul class="checklist"><li onclick="toggleCheck(this)">Sent a story back with a concrete change</li><li onclick="toggleCheck(this)">It came back to In Acceptance with new evidence for the change</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
@@ -2752,8 +2767,9 @@ While you're creating this skill, don't ask me follow-up questions and don't run
     what an accessibility reviewer checks (labels, keyboard use, focus, contrast in both themes). Have
     <code>/review-pr</code> run it as a second fresh subagent next to the code reviewer, and merge both
     verdicts: anything blocking from either sends the story back.</p>
-  <div class="prompt-box"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">Add an accessibility reviewer to the review-pr skill: a new file reviewers/accessibility.md with what to check (form labels, keyboard-only use, visible focus, readable contrast in light and dark mode, screen reader names for icon buttons) in the same answer format as reviewers/code-reviewer.md. In SKILL.md, run it as a second fresh general-purpose subagent next to the code reviewer, with the same inputs, and combine the two verdicts: a blocking finding from either one means changes needed. Don't change anything else.</div></div>
-  <ul class="checklist"><li onclick="toggleCheck(this)"><code>review-pr</code> runs two reviewers and merges their verdicts</li></ul>
+  <div class="prompt-box"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">Add an accessibility reviewer to the review-pr skill: a new file reviewers/accessibility.md with what to check (form labels, keyboard-only use, visible focus, readable contrast in light and dark mode, screen reader names for icon buttons) in the same answer format as reviewers/code-reviewer.md, with the same rule that a criterion with a weak or missing test is blocking. In SKILL.md, run it as a second fresh general-purpose subagent next to the code reviewer, with the same inputs, and combine the two verdicts: a blocking finding from either one means changes needed. Don't change anything else.</div></div>
+  <div class="step-section"><div class="step-section-title">Run it</div><p>Send the next story through both reviewers and watch the verdicts merge in its review file:</p><div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/review-pr XC-13</div></div><p>(If XC-13 isn't In Review yet, run <code>/implement XC-13</code> instead: the review step uses both reviewers.)</p></div>
+  <ul class="checklist"><li onclick="toggleCheck(this)"><code>review-pr</code> runs two reviewers and merges their verdicts</li><li onclick="toggleCheck(this)">Saw both reviewers' findings in one review file</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
         </div>

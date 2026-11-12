@@ -30,6 +30,10 @@ the board.
   and wrap user actions in `evidence.step("…", …)`, whose captions show in the QA videos.
 - Two projects run the same tests: `verify` (`pnpm e2e`, fast) and `evidence`
   (`pnpm e2e:evidence`, human-paced, one video per test, results in `test-results/results.json`).
+- Never click **Sign out** in a spec that uses the saved sign-in: it ends the session on the server
+  and every later test fails until a person runs `pnpm e2e:login` again. Check signed-out screens
+  in a fresh context (`browser.newContext({ storageState: { cookies: [], origins: [] } })`).
+- `pnpm exec tsc -b` typechecks the specs too (`tsconfig.e2e.json`).
 - Never weaken, skip or delete a test to get green. Every earlier story's spec is part of the
   regression suite.
 
