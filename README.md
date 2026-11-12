@@ -1,5 +1,9 @@
 # X Clone Engineering
 
+> **Required: Claude Pro or higher.** Pro is the cheapest plan that includes Claude Code and the
+> desktop app ([see current prices](https://claude.com/pricing)). For a workshop it's simpler and
+> better value than buying API credits. The Free plan isn't enough.
+
 The X Clone engineering workshop. The backlog is ready: ten user stories in four epics, with the
 PRD behind them, are in `docs/` and on the team's board, all in **New**. Like a developer joining
 the team, you take it from there.
