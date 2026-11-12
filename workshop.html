@@ -1277,9 +1277,12 @@ pnpm e2e e2e/smoke.spec.ts</div></div>
     <tr><td><strong>In Review</strong></td><td><code>/implement-story</code> when everything is green</td><td>Part 3</td></tr>
     <tr><td><strong>In QA</strong></td><td><code>/review-pr</code> approves</td><td>Part 3</td></tr>
     <tr><td><strong>In Acceptance</strong></td><td><code>/qa-evidence</code> when every criterion passes</td><td>Part 3</td></tr>
-    <tr><td><strong>Done</strong></td><td><strong>you</strong>, with the board's Accept button</td><td>Part 3</td></tr>
+    <tr><td><strong>Done</strong></td><td><strong>you</strong>, as PO: drag the card to Done</td><td>Part 3</td></tr>
     </tbody></table>
-    <p>Anything sent back goes to <strong>In Progress</strong>. The story text belongs to the product
+    <p>The board knows three roles, picked at its top: a <strong>Developer</strong> moves New, In Progress
+    and In Review; <strong>QA</strong> moves In Review, In QA and In Acceptance; a <strong>PO</strong> moves
+    In Acceptance and Done. The skills move as Developer and QA, so only a person can reach Done.
+    Anything sent back goes to <strong>In Progress</strong>, with a reason. The story text belongs to the product
     owner: you never edit it. A story that looks wrong is a question for them, not an edit.</p></div>
   <div class="step-section"><div class="step-section-title">Check the backlog is ready</div><p>Before building anything, check the stories are complete and linked. In Part 4 this becomes step 0 of <code>/implement</code>.</p><div class="prompt-box"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">Check the stories in docs/ are ready to build, without changing anything. Every stories file must link back to its epic, and every epic's Stories list must link to stories that exist. Every Must Have requirement (R1, R2…) in the PRD must be in some story's Covers line, and every Covers ID must exist in the PRD. Every epic and story needs a Work Item key that's on the board in docs/tracker/board-data.js. List any failures, then any non-functional requirements (NF…) that no story covers, as warnings.</div></div></div>
   <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>You should see a pass, with NF5–NF8 as warnings. Those are constraints on every story (reuse the existing API, delivery speed, scale, accessibility), not work for one story, so the review checks them every time.</span></div>
@@ -1957,11 +1960,18 @@ Never edit `docs/tracker/board-data.js` by hand while it runs.
 ```sh
 curl -s -X POST http://localhost:PORT/api/items/XC-5/status \
   -H 'Content-Type: application/json' \
-  -d '{"status":"In Progress","author":"Claude"}'
+  -d '{"status":"In Progress","from":"New","role":"Developer","author":"Claude"}'
 ```
 
-The status must be one of: `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
-Skills never set `Done`: that's the person's decision on the board.
+- `status`: one of `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
+- `from`: the column you expect the ticket to be in now.
+- `role`: `Developer` for `/implement-story`; `QA` for `/review-pr` and `/qa-evidence`. The board
+  enforces who may move what: a Developer moves between New, In Progress and In Review; QA moves
+  between In Review, In QA and In Acceptance, and pushes back to In Progress; only a PO (a
+  person) moves a ticket to Done.
+- Pushing back to In Progress needs `"comment"`: the reason, which becomes the to-do list.
+- **409** means a person moved the ticket since you looked. Stop work on that ticket, leave it
+  where it is, and report it. Never move it back.
 
 ## Comment on a ticket
 
@@ -2104,11 +2114,18 @@ Never edit `docs/tracker/board-data.js` by hand while it runs.
 ```sh
 curl -s -X POST http://localhost:PORT/api/items/XC-5/status \
   -H 'Content-Type: application/json' \
-  -d '{"status":"In Progress","author":"Claude"}'
+  -d '{"status":"In Progress","from":"New","role":"Developer","author":"Claude"}'
 ```
 
-The status must be one of: `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
-Skills never set `Done`: that's the person's decision on the board.
+- `status`: one of `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
+- `from`: the column you expect the ticket to be in now.
+- `role`: `Developer` for `/implement-story`; `QA` for `/review-pr` and `/qa-evidence`. The board
+  enforces who may move what: a Developer moves between New, In Progress and In Review; QA moves
+  between In Review, In QA and In Acceptance, and pushes back to In Progress; only a PO (a
+  person) moves a ticket to Done.
+- Pushing back to In Progress needs `"comment"`: the reason, which becomes the to-do list.
+- **409** means a person moved the ticket since you looked. Stop work on that ticket, leave it
+  where it is, and report it. Never move it back.
 
 ## Comment on a ticket
 
@@ -2176,7 +2193,7 @@ scripts. A failing criterion is a result: post it and send the ticket back.
    They are what you prove.
 3. **Record.** From `src/frontend`, with the dev server running and the sign-in saved:
    `pnpm e2e:evidence e2e/&lt;key&gt;.spec.ts`. It plays each test at human speed and records one video
-   per test. Run it once. Run it again only if the run itself broke (a crash, or the dev server
+   per test, and clears the previous run's results itself, so never delete anything first. Run it once. Run it again only if the run itself broke (a crash, or the dev server
    was down), never to turn a red criterion green.
 4. **Match results to criteria.** Read `src/frontend/test-results/results.json`. For each test
    named `AC&lt;n&gt;: …`, take its status and its video attachment path. Check the video exists and
@@ -2219,11 +2236,18 @@ Never edit `docs/tracker/board-data.js` by hand while it runs.
 ```sh
 curl -s -X POST http://localhost:PORT/api/items/XC-5/status \
   -H 'Content-Type: application/json' \
-  -d '{"status":"In Progress","author":"Claude"}'
+  -d '{"status":"In Progress","from":"New","role":"Developer","author":"Claude"}'
 ```
 
-The status must be one of: `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
-Skills never set `Done`: that's the person's decision on the board.
+- `status`: one of `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
+- `from`: the column you expect the ticket to be in now.
+- `role`: `Developer` for `/implement-story`; `QA` for `/review-pr` and `/qa-evidence`. The board
+  enforces who may move what: a Developer moves between New, In Progress and In Review; QA moves
+  between In Review, In QA and In Acceptance, and pushes back to In Progress; only a PO (a
+  person) moves a ticket to Done.
+- Pushing back to In Progress needs `"comment"`: the reason, which becomes the to-do list.
+- **409** means a person moved the ticket since you looked. Stop work on that ticket, leave it
+  where it is, and report it. Never move it back.
 
 ## Comment on a ticket
 
@@ -2279,12 +2303,12 @@ While you're creating this skill, don't ask me follow-up questions and don't run
         </div>
         <div class="step-body">
           
-  <p>Open XC-5 on the board and watch the videos. Type your name at the top of the board, then press
-    <strong>Accept</strong>: XC-5 moves to <strong>Done</strong>. If something isn't right, write why
-    and press <strong>Send back</strong>: it returns to <strong>In Progress</strong> with your comment,
-    which <code>/implement-story</code> reads as its to-do list.</p>
+  <p>Open XC-5 on the board and watch the videos. At the top of the board, type your name and pick
+    <strong>PO</strong>, then drag XC-5 to <strong>Done</strong>. If something isn't right, drag it back
+    to <strong>In Progress</strong> instead: the board asks why, and your reason becomes a comment that
+    <code>/implement-story</code> reads as its to-do list. (Keyboard: focus the card and press ← or →.)</p>
   <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>No skill ever moves a ticket to Done. Deciding that the work is what was asked for stays with a person.</span></div>
-  <ul class="checklist"><li onclick="toggleCheck(this)">Watched the evidence videos</li><li onclick="toggleCheck(this)">Accepted XC-5: it's in Done</li></ul>
+  <ul class="checklist"><li onclick="toggleCheck(this)">Watched the evidence videos</li><li onclick="toggleCheck(this)">Dragged XC-5 to Done</li></ul>
 
           <button class="complete-btn" onclick="toggleComplete(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg> Mark as Completed</button>
         </div>
@@ -2308,7 +2332,7 @@ While you're creating this skill, don't ask me follow-up questions and don't run
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/implement-story XC-8</div></div>
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/review-pr XC-8</div></div>
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/qa-evidence XC-8</div></div>
-  <p>Then accept it, or send it back, on the board.</p>
+  <p>Then, as PO, drag it to Done, or back to In Progress with a reason.</p>
   <div class="callout"><svg class="callout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span>Notice what you did between the three commands: nothing, except start the next one. That's the cue for Part 4.</span></div>
   <ul class="checklist"><li onclick="toggleCheck(this)">XC-8 went through In Progress, In Review and In QA to In Acceptance</li><li onclick="toggleCheck(this)">Accepted (or sent back) on the board</li></ul>
 
@@ -2535,11 +2559,18 @@ Never edit `docs/tracker/board-data.js` by hand while it runs.
 ```sh
 curl -s -X POST http://localhost:PORT/api/items/XC-5/status \
   -H 'Content-Type: application/json' \
-  -d '{"status":"In Progress","author":"Claude"}'
+  -d '{"status":"In Progress","from":"New","role":"Developer","author":"Claude"}'
 ```
 
-The status must be one of: `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
-Skills never set `Done`: that's the person's decision on the board.
+- `status`: one of `New`, `In Progress`, `In Review`, `In QA`, `In Acceptance`, `Done`.
+- `from`: the column you expect the ticket to be in now.
+- `role`: `Developer` for `/implement-story`; `QA` for `/review-pr` and `/qa-evidence`. The board
+  enforces who may move what: a Developer moves between New, In Progress and In Review; QA moves
+  between In Review, In QA and In Acceptance, and pushes back to In Progress; only a PO (a
+  person) moves a ticket to Done.
+- Pushing back to In Progress needs `"comment"`: the reason, which becomes the to-do list.
+- **409** means a person moved the ticket since you looked. Stop work on that ticket, leave it
+  where it is, and report it. Never move it back.
 
 ## Comment on a ticket
 
@@ -2632,8 +2663,8 @@ While you're creating this skill, don't ask me follow-up questions and don't run
         </div>
         <div class="step-body">
           
-  <p>Pick a story in <strong>In Acceptance</strong> or <strong>Done</strong> and send it back with a concrete
-    change, for example &ldquo;the like count should show 1K instead of 1000 above a thousand&rdquo;.
+  <p>As PO, drag a story from <strong>In Acceptance</strong> back to <strong>In Progress</strong> and give a concrete
+    change as the reason, for example &ldquo;the like count should show 1K instead of 1000 above a thousand&rdquo;.
     Then run it again:</p>
   <div class="prompt-box"><span class="prompt-label">Claude Code</span><button class="copy-btn" onclick="copyText(this)">Copy</button><div class="prompt-content">/implement XC-10</div></div>
   <p><code>/implement-story</code> reads your comment as its to-do list, adds or changes a test for it,

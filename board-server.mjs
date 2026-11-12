@@ -13,8 +13,16 @@
  *   GET  /api/health                         { ok, board: true, port, root }
  *   GET  /api/board                          the full board (same data as docs/tracker/board-data.js)
  *   POST /api/items/:key/comments            { author, role?, body, attachments? } → the saved comment
- *   POST /api/items/:key/status              { status, author? } → the updated item
+ *   POST /api/items/:key/status              { status, role, from?, author?, comment? } → the updated item
  *        status is one of: New, In Progress, In Review, In QA, In Acceptance, Done
+ *        role decides which moves are allowed (the board and the skills use the same rules):
+ *          Developer  New, In Progress, In Review
+ *          QA         In Review, In QA, In Acceptance, and push back to In Progress
+ *          PO         In Acceptance, Done, and push back to In Progress
+ *        A push back needs a comment (the reason), saved with the move. `from` is the column the
+ *        caller expects the item to be in: if someone moved it since, the move is refused (409).
+ *        Without a role (older tools) any move is allowed except to Done, which only a PO makes.
+ *        An epic's status can't be set: it follows its stories.
  *   POST /api/items/:key/attachments?name=…  raw file body → { path } under docs/qa/<KEY>/
  *
  * Every write re-reads docs/tracker/board-data.js, applies one change and atomically replaces the
@@ -39,6 +47,25 @@ const QA_DIR = path.join(ROOT, "docs", "qa")
 const STATE_FILE = path.join(ROOT, ".board-server.json")
 const FIRST_PORT = Number(argValue("--port") ?? process.env.BOARD_PORT ?? 4000)
 const STATUSES = ["New", "In Progress", "In Review", "In QA", "In Acceptance", "Done"]
+// Who may move a ticket where. board.html has the same table; keep them identical.
+const ROLE_COLUMNS = {
+  Developer: ["New", "In Progress", "In Review"],
+  QA: ["In Review", "In QA", "In Acceptance"],
+  PO: ["In Acceptance", "Done"],
+}
+const PUSH_BACK_TO = "In Progress"
+
+// "ok", "push-back" (needs a comment) or "no".
+function moveRule(role, from, to) {
+  const cols = ROLE_COLUMNS[role] || []
+  if (cols.includes(from) && cols.includes(to)) return "ok"
+  if (role !== "Developer" && to === PUSH_BACK_TO && cols.includes(from)) return "push-back"
+  return "no"
+}
+
+function statusOf(value) {
+  return STATUSES.find((s) => s.toLowerCase() === String(value ?? "").trim().toLowerCase())
+}
 const MAX_JSON_BYTES = 256 * 1024
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 const PREFIX = "window.BOARD = "
@@ -269,15 +296,40 @@ async function handle(req, res, port) {
 
     if (action === "status") {
       const body = await readJson(req)
-      const status = STATUSES.find((s) => s.toLowerCase() === String(body.status ?? "").trim().toLowerCase())
+      const status = statusOf(body.status)
       if (!status) throw new HttpError(400, `status must be one of: ${STATUSES.join(", ")}`)
+      const role = text(body.role, "role", 20)
+      if (role && !ROLE_COLUMNS[role]) throw new HttpError(400, `role must be one of: ${Object.keys(ROLE_COLUMNS).join(", ")}`)
+      const expected = body.from === undefined ? undefined : statusOf(body.from)
+      if (body.from !== undefined && !expected) throw new HttpError(400, `from must be one of: ${STATUSES.join(", ")}`)
+      const author = text(body.author, "author", 80)
+      const reason = text(body.comment, "comment", 10000)
       const updated = await updateBoard((board) => {
         const item = findItem(board, key)
         if (item.type === "Epic") {
           throw new HttpError(400, `${key} is an epic: its status follows its stories, so move a story instead`)
         }
+        const current = statusOf(item.status) ?? "New"
+        if (expected && expected !== current) {
+          throw new HttpError(409, `${key} is in ${current} now, not ${expected}: someone moved it, so leave it to them`)
+        }
+        if (role) {
+          const rule = current === status ? "ok" : moveRule(role, current, status)
+          if (rule === "no") throw new HttpError(403, `A ${role} can't move ${key} from ${current} to ${status}`)
+          if (rule === "push-back" && !reason) {
+            throw new HttpError(400, `Pushing ${key} back to ${PUSH_BACK_TO} needs a comment saying why`)
+          }
+        } else if (status === "Done" && current !== "Done") {
+          throw new HttpError(403, `Only a PO moves a ticket to Done (send "role": "PO")`)
+        }
         item.status = status
         touch(item)
+        if (reason) {
+          item.comments = Array.isArray(item.comments) ? item.comments : []
+          const comment = { author: author || role || "Unknown", role, created: now(), body: reason }
+          if (!comment.role) delete comment.role
+          item.comments.push(comment)
+        }
         // The story's epic follows its stories (board.html applies the same rule).
         const epic = item.parent ? board.items.find((i) => i.key === item.parent && i.type === "Epic") : null
         if (epic) {

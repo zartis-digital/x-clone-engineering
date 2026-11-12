@@ -599,6 +599,93 @@
         font-weight: 600;
         color: var(--success);
       }
+
+      /* ============================================================
+       Moving tickets: drag and drop (or ← / → on a focused card)
+       ============================================================ */
+      .card.movable {
+        cursor: grab;
+      }
+
+      .card.movable:focus-visible {
+        outline: 3px solid var(--primary-border);
+        outline-offset: 2px;
+      }
+
+      .card.dragging {
+        opacity: 0.5;
+      }
+
+      .card.pending {
+        opacity: 0.6;
+      }
+
+      .column.drop-ok {
+        outline: 2px dashed var(--success);
+        outline-offset: -2px;
+      }
+
+      .column.drop-push-back {
+        outline: 2px dashed var(--warning);
+        outline-offset: -2px;
+      }
+
+      .column.drop-no {
+        opacity: 0.45;
+      }
+
+      .column.drop-over {
+        background: var(--primary-bg);
+      }
+
+      .move-notice {
+        min-height: 1.2em;
+        margin-top: 6px;
+        font-size: 0.8rem;
+        color: var(--warning);
+      }
+
+      dialog.push-back {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        width: min(460px, calc(100vw - 32px));
+        background: var(--bg);
+        color: var(--text);
+        box-shadow: var(--shadow);
+      }
+
+      dialog.push-back::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+      }
+
+      dialog.push-back h2 {
+        font-size: 1rem;
+        margin-bottom: 4px;
+      }
+
+      dialog.push-back p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+      }
+
+      dialog.push-back textarea {
+        width: 100%;
+        min-height: 90px;
+        font: inherit;
+        font-size: 0.9rem;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg-card);
+        color: var(--text);
+      }
+
+      dialog.push-back .comment-actions {
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
     </style>
   </head>
   <body>
@@ -616,6 +703,18 @@
     </header>
 
     <main class="container" id="board"></main>
+
+    <dialog class="push-back" id="pushBack" aria-labelledby="pushBackTitle">
+      <form method="dialog">
+        <h2 id="pushBackTitle">Push back</h2>
+        <p id="pushBackHint">Say what needs to change. It's posted as a comment and becomes the to-do list for the rework.</p>
+        <textarea id="pushBackReason" aria-label="Why it's going back" required></textarea>
+        <div class="comment-actions">
+          <button class="btn" value="cancel" formnovalidate>Cancel</button>
+          <button class="btn primary" value="confirm" id="pushBackConfirm" disabled>Push back</button>
+        </div>
+      </form>
+    </dialog>
 
     <script>
       // board.html?data=examples/tracker/board-data.js opens another data file
@@ -843,9 +942,7 @@
         const input = el("textarea");
         input.rows = 2;
         input.dataset.draftKey = item.key;
-        input.placeholder = column === "In Acceptance"
-          ? "Comment, or the reason for sending it back…"
-          : "Add a comment…";
+        input.placeholder = "Add a comment…";
         input.setAttribute("aria-label", "Comment on " + item.key);
         input.value = drafts.get(item.key) || "";
         input.addEventListener("input", () => drafts.set(item.key, input.value));
@@ -855,66 +952,42 @@
         const post = el("button", "btn primary", "Comment");
         post.type = "submit";
         actions.appendChild(post);
-        let accept, sendBack;
-        if (column === "In Acceptance") {
-          accept = el("button", "btn accept", "Accept → Done");
-          accept.type = "button";
-          sendBack = el("button", "btn", "Send back → In Progress");
-          sendBack.type = "button";
-          actions.appendChild(accept);
-          actions.appendChild(sendBack);
-        }
         form.appendChild(actions);
         const status = el("div", "form-status");
         status.setAttribute("role", "status");
         form.appendChild(status);
 
-        async function run(kind) {
+        async function run() {
           const author = store("board-author").trim();
-          const role = store("board-role") || "Human QA";
+          const role = currentRole();
           const body = input.value.trim();
           if (!author) {
             status.textContent = "Type your name at the top of the board first.";
             document.getElementById("author")?.focus();
             return;
           }
-          if (kind === "comment" && !body) {
+          if (!body) {
             status.textContent = "Write a comment first.";
             return;
           }
-          if (kind === "back" && !body) {
-            status.textContent = "Say why it's going back — that becomes the comment.";
-            input.focus();
-            return;
-          }
-          [post, accept, sendBack].forEach((b) => b && (b.disabled = true));
+          post.disabled = true;
           status.textContent = "";
           try {
             const key = encodeURIComponent(item.key);
-            if (kind === "comment") {
-              await api("/api/items/" + key + "/comments", { author, role, body });
-            } else if (kind === "accept") {
-              await api("/api/items/" + key + "/comments", { author, role, body: body || "Accepted." });
-              await api("/api/items/" + key + "/status", { status: "Done", author });
-            } else {
-              await api("/api/items/" + key + "/comments", { author, role, body: "Sent back: " + body });
-              await api("/api/items/" + key + "/status", { status: "In Progress", author });
-            }
+            await api("/api/items/" + key + "/comments", { author, role, body });
             drafts.delete(item.key);
             input.value = "";
             load();
           } catch (err) {
             status.textContent = err.message;
-            [post, accept, sendBack].forEach((b) => b && (b.disabled = false));
+            post.disabled = false;
           }
         }
 
         form.addEventListener("submit", (e) => {
           e.preventDefault();
-          run("comment");
+          run();
         });
-        if (accept) accept.addEventListener("click", () => run("accept"));
-        if (sendBack) sendBack.addEventListener("click", () => run("back"));
         return form;
       }
 
@@ -924,10 +997,10 @@
         const controls = document.getElementById("controls");
         controls.replaceChildren();
         if (serverOnline) {
-          live.textContent = "● Live — comments on";
+          live.textContent = "● Live — drag cards to move them";
           live.className = "live on";
           const who = el("div", "identity");
-          who.appendChild(el("span", null, "Commenting as"));
+          who.appendChild(el("span", null, "You are"));
           const name = el("input");
           name.id = "author";
           name.placeholder = "Your name";
@@ -936,21 +1009,25 @@
           name.addEventListener("input", () => store("board-author", name.value));
           const role = el("select");
           role.setAttribute("aria-label", "Your role");
-          ["Human QA", "PO", "Developer", "Reviewer"].forEach((r) => {
-            const option = el("option", null, r);
+          Object.keys(ROLE_COLUMNS).forEach((r) => {
+            const option = el("option", null, r + " — " + ROLE_COLUMNS[r].join(", "));
             option.value = r;
             role.appendChild(option);
           });
-          role.value = store("board-role") || "Human QA";
+          role.value = currentRole();
           role.addEventListener("change", () => store("board-role", role.value));
           who.appendChild(name);
           who.appendChild(role);
           controls.appendChild(who);
+          const notice = el("div", "move-notice");
+          notice.id = "moveNotice";
+          notice.setAttribute("role", "status");
+          controls.appendChild(notice);
         } else {
           live.textContent = "Read-only";
           live.className = "live";
           const banner = el("div", "readonly-banner");
-          banner.appendChild(document.createTextNode("To comment and accept tickets, run "));
+          banner.appendChild(document.createTextNode("To move tickets and comment, run "));
           banner.appendChild(el("code", null, "pnpm board"));
           banner.appendChild(document.createTextNode(" in src/frontend and open "));
           banner.appendChild(el("code", null, "http://localhost:4000"));
@@ -962,6 +1039,178 @@
       // The board's columns, left to right. Anything else ("To Do" from
       // /sync-to-board, an empty status) is treated as New.
       const COLUMNS = ["New", "In Progress", "In Review", "In QA", "In Acceptance", "Done"];
+
+      // Who may move a ticket where. board-server.mjs has the same table and enforces it.
+      const ROLE_COLUMNS = {
+        Developer: ["New", "In Progress", "In Review"],
+        QA: ["In Review", "In QA", "In Acceptance"],
+        PO: ["In Acceptance", "Done"],
+      };
+      const PUSH_BACK_TO = "In Progress";
+
+      // "ok", "push-back" (asks why), or "no".
+      function moveRule(role, from, to) {
+        const cols = ROLE_COLUMNS[role] || [];
+        if (cols.includes(from) && cols.includes(to)) return "ok";
+        if (role !== "Developer" && to === PUSH_BACK_TO && cols.includes(from)) return "push-back";
+        return "no";
+      }
+
+      function currentRole() {
+        const saved = store("board-role");
+        if (ROLE_COLUMNS[saved]) return saved;
+        return saved === "Developer" ? "Developer" : saved === "PO" ? "PO" : saved ? "QA" : "PO";
+      }
+
+      function notify(message) {
+        const notice = document.getElementById("moveNotice");
+        if (notice) notice.textContent = message || "";
+      }
+
+      // While a card is being dragged or a push-back is being typed, live redraws wait.
+      let interacting = false;
+      let dragging = null;
+
+      function columnEl(name) {
+        return board.querySelector('.column[data-column="' + name + '"]');
+      }
+
+      function clearDropMarks() {
+        board.querySelectorAll(".column").forEach((c) =>
+          c.classList.remove("drop-ok", "drop-push-back", "drop-no", "drop-same", "drop-over")
+        );
+      }
+
+      function askWhy(key, to) {
+        const dialog = document.getElementById("pushBack");
+        const reason = document.getElementById("pushBackReason");
+        const confirm = document.getElementById("pushBackConfirm");
+        document.getElementById("pushBackTitle").textContent = "Push " + key + " back to " + to;
+        reason.value = "";
+        confirm.disabled = true;
+        reason.oninput = () => (confirm.disabled = !reason.value.trim());
+        return new Promise((resolve) => {
+          dialog.onclose = () => resolve(dialog.returnValue === "confirm" ? reason.value.trim() : null);
+          dialog.returnValue = "";
+          dialog.showModal();
+          reason.focus();
+        });
+      }
+
+      async function moveTicket(card, from, to) {
+        const key = card.id;
+        const author = store("board-author").trim();
+        const role = currentRole();
+        if (!author) {
+          notify("Type your name at the top of the board first.");
+          document.getElementById("author")?.focus();
+          return;
+        }
+        const rule = moveRule(role, from, to);
+        if (rule === "no") {
+          notify("A " + role + " can't move " + key + " from " + from + " to " + to + ".");
+          return;
+        }
+        interacting = true;
+        // Show the card in its new column straight away, faded until the server agrees.
+        const target = columnEl(to)?.querySelector(".column-cards");
+        if (target) {
+          target.querySelector(".column-empty")?.remove();
+          target.prepend(card);
+          card.classList.add("pending");
+        }
+        let comment = role + " " + author + ": " + from + " → " + to;
+        if (rule === "push-back") {
+          const why = await askWhy(key, to);
+          if (!why) {
+            interacting = false;
+            lastJson = null;
+            load(); // cancelled: put it back
+            card.focus?.();
+            return;
+          }
+          comment = "Pushed back by " + role + " " + author + ": " + why;
+        }
+        try {
+          await api("/api/items/" + encodeURIComponent(key) + "/status", {
+            status: to, from, role, author, comment,
+          });
+          notify("");
+        } catch (err) {
+          notify(err.message);
+        }
+        interacting = false;
+        lastJson = null;
+        load();
+      }
+
+      function makeMovable(card, column) {
+        if (!serverOnline) return;
+        card.classList.add("movable");
+        card.draggable = true;
+        card.tabIndex = 0;
+        card.setAttribute("aria-description", "Press left or right arrow to move it to the next column");
+        card.addEventListener("dragstart", (e) => {
+          if (e.target !== card) return;
+          dragging = { card, from: column };
+          interacting = true;
+          card.classList.add("dragging");
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", card.id);
+          const role = currentRole();
+          COLUMNS.forEach((name) => {
+            const rule = name === column ? "same" : moveRule(role, column, name);
+            columnEl(name)?.classList.add(
+              rule === "ok" ? "drop-ok" : rule === "push-back" ? "drop-push-back" : rule === "same" ? "drop-same" : "drop-no"
+            );
+          });
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          clearDropMarks();
+          if (dragging && dragging.card === card) {
+            dragging = null;
+            interacting = false;
+          }
+        });
+        card.addEventListener("keydown", (e) => {
+          if (e.target !== card || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+          e.preventDefault();
+          const role = currentRole();
+          const i = COLUMNS.indexOf(column);
+          let to = COLUMNS[i + (e.key === "ArrowRight" ? 1 : -1)];
+          // Moving left out of your own columns is a push back to In Progress.
+          if (e.key === "ArrowLeft" && to && moveRule(role, column, to) === "no" &&
+              moveRule(role, column, PUSH_BACK_TO) === "push-back") {
+            to = PUSH_BACK_TO;
+          }
+          if (to) moveTicket(card, column, to);
+        });
+      }
+
+      function makeDropTarget(columnNode, name) {
+        if (!serverOnline) return;
+        columnNode.addEventListener("dragover", (e) => {
+          if (!dragging || dragging.from === name) return;
+          if (moveRule(currentRole(), dragging.from, name) === "no") return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          columnNode.classList.add("drop-over");
+        });
+        columnNode.addEventListener("dragleave", (e) => {
+          if (!columnNode.contains(e.relatedTarget)) columnNode.classList.remove("drop-over");
+        });
+        columnNode.addEventListener("drop", (e) => {
+          e.preventDefault();
+          if (!dragging) return;
+          const { card, from } = dragging;
+          dragging = null;
+          interacting = false; // moveTicket takes over (and pauses redraws again if it goes ahead)
+          clearDropMarks();
+          card.classList.remove("dragging");
+          moveTicket(card, from, name);
+        });
+      }
 
       function columnOf(item) {
         const status = String(item.status || "").trim().toLowerCase();
@@ -1100,6 +1349,8 @@
             .filter((s) => columnOf(s) === name)
             .sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || "")));
           const column = el("div", "column");
+          column.dataset.column = name;
+          makeDropTarget(column, name);
           const head = el("div", "column-head");
           head.appendChild(el("span", null, name));
           head.appendChild(el("span", "column-count", inColumn.length));
@@ -1108,6 +1359,7 @@
           if (!inColumn.length) cards.appendChild(el("div", "column-empty", "Nothing here"));
           inColumn.forEach((story) => {
             const card = renderCard(story, false, name);
+            makeMovable(card, name);
             const epic = epicByKey.get(story.parent);
             const chip = el("a", "epic-chip", epic ? epic.key + " · " + (epic.title || "") : "No epic");
             if (epic) chip.href = "#" + epic.key;
@@ -1217,6 +1469,7 @@
             }
             return;
           }
+          if (interacting) return;
           const json = JSON.stringify(window.BOARD);
           if (json === lastJson) return;
           lastJson = json;

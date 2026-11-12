@@ -110,5 +110,8 @@ Run from `src/frontend/`:
 ## The board
 
 Six states: **New → In Progress → In Review → In QA → In Acceptance →
-Done**. Skills move stories through the board server's API. Only a person moves one to **Done**,
-with the board's Accept button. Opened straight from disk, `board.html` is read-only.
+Done**. Skills move stories through the board server's API, as Developer or QA. People drag cards
+between columns after picking a role at the top of the board: a Developer moves New, In Progress
+and In Review; QA moves In Review, In QA and In Acceptance; a PO moves In Acceptance and Done.
+Sending a card back to In Progress asks for a reason, and only a PO moves a ticket to **Done**.
+Opened straight from disk, `board.html` is read-only.
