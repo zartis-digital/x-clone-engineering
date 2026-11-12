@@ -1120,8 +1120,8 @@
       .time-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 10px 0 4px; }
       .time-table th, .time-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
       .time-table td:last-child, .time-table th:last-child { text-align: right; white-space: nowrap; }
-      /* The cheat-sheet hint is a button: click it, or press ? anywhere. */
-      button.keyboard-hint { background: none; border: none; padding: 4px 6px; margin: -4px -6px; border-radius: 6px; font-family: var(--font-sans); cursor: pointer; }
+      /* Cheat-sheet hint: the whole hint is a button (click it, or press ? anywhere). */
+      button.keyboard-hint { background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; }
       button.keyboard-hint:hover, button.keyboard-hint:focus-visible { color: var(--primary); }
       button.keyboard-hint:hover kbd, button.keyboard-hint:focus-visible kbd { border-color: var(--primary); color: var(--primary); }
     </style>
@@ -3198,9 +3198,14 @@ While you're creating this skill, don't ask me follow-up questions and don't run
        Event Listeners
        ============================================================ */
       document.addEventListener("keydown", (e) => {
+        // "?" on any layout, or Shift + the "/" key; never while typing or with Ctrl/Cmd held.
+        const isQuestionMark = e.key === "?" || (e.code === "Slash" && e.shiftKey);
         if (
-          e.key === "?" &&
-          !["INPUT", "TEXTAREA"].includes(e.target.tagName)
+          isQuestionMark &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          !["INPUT", "TEXTAREA"].includes(e.target.tagName) &&
+          !e.target.isContentEditable
         ) {
           e.preventDefault();
           const modal = document.getElementById("cheatModal");
